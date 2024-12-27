@@ -9,10 +9,13 @@ export class LoginUserUseCase {
     ) {}
 
     async execute(credentials: { email: string; password: string }): Promise<AuthResponseDto> {
+        console.log('👤 Login attempt for:', credentials.email);
+
         // Find user by email
         const user = await this.userRepository.findByEmail(credentials.email);
         if (!user) {
-            throw new Error('User not found');
+            console.log('❌ User not found:', credentials.email);
+            throw new Error('Invalid email or password');
         }
 
         // Verify password
@@ -21,8 +24,13 @@ export class LoginUserUseCase {
             user.password
         );
 
+        console.log('🔐 Password validation:', { 
+            email: credentials.email, 
+            isValid: isPasswordValid 
+        });
+
         if (!isPasswordValid) {
-            throw new Error('Invalid password');
+            throw new Error('Invalid email or password');
         }
 
         // Generate tokens

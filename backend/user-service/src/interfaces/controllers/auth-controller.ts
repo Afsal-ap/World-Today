@@ -23,25 +23,27 @@ export class AuthController {
             try {
                 await this.sendOtpUseCase.execute(req.body.email);
                 console.log('✉️ OTP sent after registration to:', req.body.email);
+                
+                // Send a more structured response
+                res.status(201).json({
+                    success: true,
+                    data: result,
+                    message: "Registration successful and OTP sent"
+                });
             } catch (otpError) {
                 console.error('Failed to send initial OTP:', otpError);
-                // Even if OTP sending fails, we still return the registration data
-                // but include a warning in the response
                 res.status(201).json({
-                    ...result,
-                    warning: "Registration successful but failed to send OTP. Please use 'Resend OTP' option."
+                    success: true,
+                    data: result,
+                    warning: "Registration successful but failed to send OTP"
                 });
-                return;
             }
-
-            // If everything succeeds, send the success response
-            res.status(201).json({
-                ...result,
-                message: "Registration successful and OTP sent"
-            });
         } catch (error: any) {
             console.error('Registration error:', error);
-            res.status(400).json({ error: error.message });
+            res.status(400).json({
+                success: false,
+                error: error.message
+            });
         }
     }  
 
@@ -77,11 +79,24 @@ export class AuthController {
 
     async verifyOtp(req: Request, res: Response): Promise<void> {
         try {
-            const { email, otp } = req.body;
-            await this.verifyOtpUseCase.execute(email, otp);
-            res.status(200).json({ success: true, message: "OTP verified successfully" });
+            const { email, otp, userData } = req.body;
+            console.log('📝 Verifying OTP Request:', { email, otp, userData });
+
+            const result = await this.verifyOtpUseCase.execute(email, otp, userData);
+            
+            // Send a proper response with tokens
+            res.status(200).json({
+                success: true,
+                message: "OTP verified successfully",
+                tokens: result.tokens, // Make sure tokens are included
+                user: result.user     // Include user data if needed
+            });
         } catch (error: any) {
-            res.status(400).json({ success: false, message: error.message });
+            console.error('❌ OTP Verification Error:', error);
+            res.status(400).json({
+                success: false,
+                message: error.message
+            });
         }
     }
 } 

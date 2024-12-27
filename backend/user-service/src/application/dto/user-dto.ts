@@ -5,7 +5,6 @@ export interface RegisterUserDto {
     phone: string;
 } 
    
-// just testing ffrfrierg  eedeeffrfrfsdsdscsc
 
 export interface VerifyOtpDto {
     phone: string;

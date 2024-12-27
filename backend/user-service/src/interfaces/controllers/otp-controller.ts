@@ -30,23 +30,29 @@ export class OTPController {
     async verifyOtp(req: Request, res: Response): Promise<void> {
         try {
             const { email, otp, userData } = req.body;
-            
+            console.log('📝 Verifying OTP with data:', { email, otp, userData });
+
             if (!email || !otp) {
-                res.status(400).json({ 
-                    success: false, 
-                    message: "Email and OTP are required" 
+                res.status(400).json({
+                    success: false,
+                    message: 'Email and OTP are required'
                 });
                 return;
             }
 
             const result = await this.verifyOtpUseCase.execute(email, otp, userData);
-            res.status(200).json({ 
-                success: true, 
-                message: "Email verified successfully",
+            
+            res.status(200).json({
+                success: true,
+                message: 'OTP verified and registration completed',
                 data: result
             });
         } catch (error: any) {
-            res.status(400).json({ success: false, message: error.message });
+            console.error('❌ OTP Verification Error:', error);
+            res.status(400).json({
+                success: false,
+                message: error.message
+            });
         }
     }
 }

@@ -23,11 +23,21 @@ export class AuthService implements IAuthService {
     private readonly REFRESH_TOKEN_EXPIRY = '7d';  // 7 days
 
     async hashPassword(password: string): Promise<string> {
-        return bcrypt.hash(password, this.SALT_ROUNDS);
+        console.log('Hashing password...');
+        const hashedPassword = await bcrypt.hash(password, this.SALT_ROUNDS);
+        return hashedPassword;
     }
 
     async comparePassword(password: string, hashedPassword: string): Promise<boolean> {
-        return bcrypt.compare(password, hashedPassword);
+        console.log('Comparing passwords...');
+        try {
+            const isMatch = await bcrypt.compare(password, hashedPassword);
+            console.log('Password comparison result:', isMatch);
+            return isMatch;
+        } catch (error) {
+            console.error('Password comparison error:', error);
+            return false;
+        }
     }
 
     async generateTokens(userId: string): Promise<AuthTokens> {

@@ -11,31 +11,30 @@ export class CompleteRegistrationUseCase {
 
     async execute(userData: { 
         email: string; 
-        hashedPassword: string; 
+        password: string; 
         name: string; 
         phone: string; 
     }): Promise<AuthResponseDto> {
-        // Check if user already exists
-        const existingUser = await this.userRepository.findByEmail(userData.email);
-        if (existingUser) {
-            throw new Error('User already exists');
-        }
+        console.log('📝 Starting registration for:', userData.email);
+
+        // Hash the password
+        const hashedPassword = await this.authService.hashPassword(userData.password);
 
         // Create new user
         const user = new User({
             email: userData.email,
-            password: userData.hashedPassword,
+            password: hashedPassword,
             name: userData.name,
             phone: userData.phone
         });
 
         // Save user
         const createdUser = await this.userRepository.create(user);
+        console.log('✅ User created successfully:', createdUser.email);
 
         // Generate tokens
         const tokens = await this.authService.generateTokens(createdUser.id!);
 
-        // Return response
         return {
             user: {
                 id: createdUser.id!,

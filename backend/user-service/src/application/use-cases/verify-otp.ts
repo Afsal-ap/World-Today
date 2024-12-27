@@ -8,8 +8,9 @@ export class VerifyOtpUseCase {
     ) {}
 
     async execute(email: string, otp: string, userData?: any): Promise<any> {
-        const savedOtp = await this.otpRepository.findOTP(email);
+        console.log('🔍 Verifying OTP:', { email, otp });
         
+        const savedOtp = await this.otpRepository.findOTP(email);
         if (!savedOtp) {
             throw new Error('OTP not found');
         }
@@ -26,8 +27,9 @@ export class VerifyOtpUseCase {
         // Delete the used OTP
         await this.otpRepository.deleteOTP(email);
 
-        // If userData exists, complete the registration
+        // Complete registration if userData exists
         if (userData) {
+            console.log('📝 Proceeding with registration:', userData.email);
             return await this.completeRegistrationUseCase.execute(userData);
         }
 

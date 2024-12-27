@@ -17,7 +17,10 @@ import { CompleteRegistrationUseCase } from './application/use-cases/complete-re
 
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 
 const userRepository = new UserRepositoryImpl();
@@ -27,7 +30,10 @@ const emailService = new EmailService();
 
 // Initialize use cases
 const completeRegistrationUseCase = new CompleteRegistrationUseCase(userRepository, authService);
-const verifyOtpUseCase = new VerifyOtpUseCase(otpRepository, completeRegistrationUseCase);
+const verifyOtpUseCase = new VerifyOtpUseCase(
+    otpRepository,
+    completeRegistrationUseCase
+);
 const registerUseCase = new RegisterUserUseCase(authService);
 const loginUseCase = new LoginUserUseCase(userRepository, authService);
 const sendOtpUseCase = new SendOtpUseCase(otpRepository, emailService);
@@ -42,14 +48,17 @@ const authController = new AuthController(
 );
 
 
-const otpController = new OTPController(sendOtpUseCase, verifyOtpUseCase);
+const otpController = new OTPController(
+    sendOtpUseCase,
+    verifyOtpUseCase
+);
 
 
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
     await connectDatabase();
-    
+          
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });
@@ -57,9 +66,9 @@ async function startServer() {
      
 startServer().catch(console.error); 
 // Routes 
-app.post('/api/auth/register', (req, res) => authController.register(req, res));
-app.post('/api/auth/login', (req, res) => authController.login(req, res));
-app.post('/api/auth/refresh-token', (req, res) => authController.refreshToken(req, res));
-app.post('/api/auth/send-otp', (req, res) => otpController.sendOtp(req, res));
-app.post('/api/auth/verify-otp', (req, res) => otpController.verifyOtp(req, res));
+app.post('/auth/register', (req, res) => authController.register(req, res));
+app.post('/auth/login', (req, res) => authController.login(req, res));
+app.post('/auth/refresh-token', (req, res) => authController.refreshToken(req, res));
+app.post('/auth/send-otp', (req, res) => otpController.sendOtp(req, res));
+app.post('/auth/verify-otp', (req, res) => otpController.verifyOtp(req, res));
 
