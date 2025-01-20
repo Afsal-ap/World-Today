@@ -87,4 +87,36 @@ export class PostRepositoryImpl implements PostRepository {
       throw error;
     }
   }
+
+  async findByIds(ids: string[]): Promise<Post[]> {
+    const postDocuments = await PostModel.find({
+      _id: { $in: ids }
+    }).populate<{ channel: { channelName: string } }>('channel', 'channelName');
+
+    return postDocuments.map(doc => new Post(
+      doc._id.toString(),
+      doc.title,
+      doc.content,
+      doc.media || '',
+      doc.mediaType as 'image' | 'video' | null,
+      doc.scheduledPublishDate ? new Date(doc.scheduledPublishDate) : null,
+      doc.status as 'draft' | 'scheduled' | 'published',
+      doc.createdAt,
+      doc.updatedAt,
+      doc.channelId,
+      doc.category,
+      doc.channel?.channelName || 'Unknown Channel'
+    ));
+  }
+
+  async findPostsByIds(postIds: string[]): Promise<any[]> {
+    try {
+      const posts = await PostModel.find({
+        _id: { $in: postIds }
+      });
+      return posts;
+    } catch (error) {
+      throw error;
+    }
+  }
 }

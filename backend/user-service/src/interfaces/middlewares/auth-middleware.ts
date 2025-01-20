@@ -17,10 +17,9 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
         }
 
         const decoded = jwt.verify(token, secret) as { userId: string };
-        console.log('Token verified successfully:', decoded);
         
-        // Set the decoded object as req.user with type casting
-        req.user = decoded as { id?: string, email?: string };
+        // Set the user ID in the request
+        req.user = { id: decoded.userId };
         next();
     } catch (error) {
         console.error('Auth middleware error:', error);

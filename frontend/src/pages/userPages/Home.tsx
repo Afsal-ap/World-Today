@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaRegComment } from 'react-icons/fa';
+import { useToggleSavePostMutation } from '../../store/slices/userApiSlice';
 
 interface Post {
   id: string;
@@ -21,6 +22,7 @@ interface Post {
     createdAt: string;
     userName: string;
   }>;
+  isSaved?: boolean;
 }
 
 const Home = () => {
@@ -33,6 +35,7 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [toggleSavePost] = useToggleSavePostMutation();
    
   const decodeToken = (token: string): any | null => {
     try {
@@ -73,25 +76,33 @@ const Home = () => {
           throw new Error('User ID not found in token');
         }
 
-        const response = await fetch(`http://localhost:3004/api/posts?userId=${userId}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${channelToken}`
-          }
-        });
+        // Fetch posts and saved posts in parallel
+        const [postsResponse, savedPostIds] = await Promise.all([
+          fetch(`http://localhost:3004/api/posts?userId=${userId}`, {
+            headers: {
+              'Authorization': `Bearer ${channelToken}`
+            }
+          }),
+          fetchSavedPostsStatus(userId)
+        ]);
            
-        if (!response.ok) {
-          const errorData = await response.json();   
-          console.error('Server error:', errorData);  
-          throw new Error(`Failed to fetch posts: ${errorData.message || response.statusText}`); 
+        if (!postsResponse.ok) {
+          const errorData = await postsResponse.json();   
+          throw new Error(`Failed to fetch posts: ${errorData.message || postsResponse.statusText}`); 
         }
         
-        const data = await response.json(); 
-        console.log('Posts data:', data); 
-        setPosts(data); 
-        setFilteredPosts(data); 
+        const postsData = await postsResponse.json(); 
         
-        const uniqueCategories = [...new Set(data.map((post: Post) => post.category))] as string[]; 
+        // Mark posts as saved based on savedPostIds
+        const postsWithSavedStatus = postsData.map((post: Post) => ({
+          ...post,
+          isSaved: savedPostIds.includes(post.id)
+        }));
+
+        setPosts(postsWithSavedStatus); 
+        setFilteredPosts(postsWithSavedStatus); 
+        
+        const uniqueCategories = [...new Set(postsWithSavedStatus.map((post: Post) => post.category))] as string[]; 
         setCategories(uniqueCategories);  
       } catch (err) { 
         console.error('Detailed error:', err); 
@@ -102,7 +113,24 @@ const Home = () => {
     }; 
 
     fetchPosts();  
-  }, [channelToken]); 
+  }, [channelToken, userToken]);
+
+  const fetchSavedPostsStatus = async (userId: string) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/users/posts/saved`, {
+        headers: {
+          'Authorization': `Bearer ${userToken}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch saved posts');
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.error('Error fetching saved posts:', error);
+      return [];
+    }
+  };
 
   const filterPostsByCategory = (category: string) => { 
     setSelectedCategory(category); 
@@ -155,6 +183,30 @@ const Home = () => {
       
     } catch (error) {
       console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleSave = async (postId: string) => {
+    try {
+      const currentPost = posts.find(p => p.id === postId);
+      if (!currentPost) return;
+
+      const method = currentPost.isSaved ? 'DELETE' : 'POST';
+      
+      const result = await toggleSavePost({ postId, method }).unwrap();
+      
+      // Update the posts state to reflect the new saved status
+      const updatePosts = (prevPosts: Post[]) => 
+        prevPosts.map(post => 
+          post.id === postId 
+            ? { ...post, isSaved: result.saved }
+            : post
+        );
+
+      setPosts(updatePosts);
+      setFilteredPosts(updatePosts);
+    } catch (error) {
+      console.error('Error toggling save post:', error);
     }
   };
 
@@ -269,6 +321,31 @@ const Home = () => {
                         <FaRegComment className="w-5 h-5" />
                         <span>{post.commentsCount}</span>
                       </div>
+                    </div>
+                    <div className="mt-4 flex items-center space-x-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSave(post.id);
+                        }}
+                        className={`flex items-center space-x-1 ${
+                          post.isSaved ? 'text-blue-500' : 'text-gray-500'
+                        } hover:text-blue-500`}
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill={post.isSaved ? 'currentColor' : 'none'}
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                          />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>

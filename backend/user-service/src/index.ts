@@ -26,8 +26,13 @@ import { log } from 'console';
 import { GetUserProfileUseCase } from './application/use-cases/getUserProfile';
 import { ProfileController } from './interfaces/controllers/userProfile-controller';
 import { setupProfileRoutes } from './interfaces/routes/profile-routes';
+import { UpdateUserProfileUseCase } from './application/use-cases/updateUserUsecase';
+import { ToggleSavePostUseCase } from './application/use-cases/savePostUsecase';
+import { SavedPostRepositoryImpl } from './infrastructure/repositories/savePost-impl';
+import { UserController } from './interfaces/controllers/user-controller';
+import { setupUserRoutes } from './interfaces/routes/user-routes';
 
-console.log('JWT Secret loaded:', process.env.JWT_SECRET); 
+
 const app = express();
 app.use(cors({ 
   origin: 'http://localhost:5173', 
@@ -40,6 +45,7 @@ const authService = new AuthService();
 const otpRepository = new OTPRepositoryImpl(); 
 const emailService = new EmailService();   
 const categoryRepository = new CategoryRepositoryImpl();  
+const savedPostRepository = new SavedPostRepositoryImpl();
 
 // Initialize use cases
 const completeRegistrationUseCase = new CompleteRegistrationUseCase(userRepository, authService);
@@ -50,12 +56,14 @@ const verifyOtpUseCase = new VerifyOtpUseCase(
 const registerUseCase = new RegisterUserUseCase(authService);
 const loginUseCase = new LoginUserUseCase(userRepository, authService);
 const sendOtpUseCase = new SendOtpUseCase(otpRepository, emailService);
+const updateUserProfileUseCase = new UpdateUserProfileUseCase(userRepository);
 const getAllUsersUseCase = new GetAllUsersUseCase(userRepository);
 const updateUserStatusUseCase = new UpdateUserStatusUseCase(userRepository);
 const adminLoginUseCase = new AdminLoginUseCase(userRepository, authService);
 const createCategoryUseCase = new CreateCategoryUseCase(categoryRepository);
 const getUserProfileUseCase = new GetUserProfileUseCase(userRepository);
-const profileController = new ProfileController(getUserProfileUseCase);
+const profileController = new ProfileController(getUserProfileUseCase, userRepository, updateUserProfileUseCase);
+const toggleSavePostUseCase = new ToggleSavePostUseCase(savedPostRepository);
 
 // Initialize controllers
 const authController = new AuthController(  
@@ -66,6 +74,7 @@ const authController = new AuthController(
     verifyOtpUseCase
 );
 
+const userController = new UserController(toggleSavePostUseCase);
 
 const otpController = new OTPController(
     sendOtpUseCase,
@@ -92,4 +101,4 @@ app.post('/auth/verify-otp', (req, res) => otpController.verifyOtp(req, res));
 app.use('/api/admin', setupAdminRoutes(adminController));  
 app.use('/api/categories', categoryRoutes);
 app.use('/api/users', setupProfileRoutes(profileController)); 
-
+app.use('/api/users', setupUserRoutes(userController, savedPostRepository));

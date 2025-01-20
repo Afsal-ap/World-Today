@@ -81,4 +81,25 @@ export class UserRepositoryImpl implements IUserRepository {
     async updateUserStatus(userId: string, isAdmin: boolean): Promise<void> {
         await UserModel.findByIdAndUpdate(userId, { isAdmin });
     }
+
+    async update(userId: string, updateData: Partial<User>): Promise<User | null> {
+        const updatedUser = await UserModel.findByIdAndUpdate(
+            userId,
+            { ...updateData, updatedAt: new Date() },
+            { new: true }
+        );
+
+        if (!updatedUser) return null;
+
+        return new User({
+            id: updatedUser._id.toString(),
+            email: updatedUser.email,
+            password: updatedUser.password,
+            name: updatedUser.name,
+            phone: updatedUser.phone,
+            isAdmin: updatedUser.isAdmin,
+            createdAt: updatedUser.createdAt,
+            updatedAt: updatedUser.updatedAt
+        });
+    }
 }

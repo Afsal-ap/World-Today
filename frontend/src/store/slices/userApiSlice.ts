@@ -1,7 +1,21 @@
 // user 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
+interface User {
+  id?: string;
+  email?: string;
+  name?: string;
+  // ... add other user properties
+}
+
+interface ProfileResponseDto {
+  status: string;
+  data: User;
+  message?: string;
+}
+
 export const userApiSlice = createApi({
+  tagTypes: ['Profile', 'SavedPosts'],
   reducerPath: 'userApi',
   baseQuery: fetchBaseQuery({ 
     baseUrl: 'http://localhost:3000',
@@ -102,22 +116,61 @@ export const userApiSlice = createApi({
       query: () => ({
         url: '/api/users/profile',
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+      }),
+      transformResponse: (response: any) => {
+        console.log('Profile response:', response);
+        if (response.status === 'success' && response.data) {
+          return response.data;
         }
+        throw new Error('Failed to fetch profile');
+      },
+      providesTags: [{ type: 'Profile', id: 'LIST' }], // Associate the query with the Profile tag
+    }),
+    updateProfile: builder.mutation<ProfileResponseDto, Partial<User>>({
+      query: (data) => ({
+        url: '/api/users/profile',
+        method: 'PUT',
+        body: data,
+      }),
+      transformResponse: (response: any) => {
+        console.log('Update profile response:', response);
+        if (response.status === 'success' && response.data) {
+          return response;
+        }
+        throw new Error('Failed to update profile');
+      },
+      transformErrorResponse: (error: { status: number; data: any }) => {
+        console.error('Update profile error:', error);
+        return {
+          status: 'error',
+          data: null,
+          message: error.data?.message || 'Failed to update profile'
+        };
+      },
+      invalidatesTags: [{ type: 'Profile', id: 'LIST' }],
+    }),
+    toggleSavePost: builder.mutation({
+      query: ({ postId, method }) => ({
+        url: '/api/users/posts/save',
+        method: method,
+        body: { postId },
       }),
       transformResponse: (response: any) => {
         if (response.status === 'success') {
           return response.data;
         }
-        throw new Error('Failed to fetch profile');
+        throw new Error('Failed to toggle save status');
       },
-      transformErrorResponse: (error: { status: number; data: any }) => {
-        return {
-          status: error.status,
-          message: error.data?.message || 'Failed to fetch profile'
-        };
-      }
+    }),
+    getSavedPosts: builder.query({
+      query: () => '/api/users/posts/saved',
+      providesTags: ['SavedPosts'],
+      transformResponse: (response: any) => {
+        if (response.status === 'success') {
+          return response.data;
+        }
+        throw new Error('Failed to fetch saved posts');
+      },
     }),
   }),
 });
@@ -127,5 +180,8 @@ export const {
     useLoginMutation,
     useSendOtpMutation, 
     useVerifyOtpMutation,
-    useGetProfileQuery 
+    useGetProfileQuery,
+    useUpdateProfileMutation,
+    useToggleSavePostMutation,
+    useGetSavedPostsQuery,
 } = userApiSlice;

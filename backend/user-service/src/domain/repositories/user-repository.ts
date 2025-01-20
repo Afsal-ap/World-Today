@@ -7,4 +7,5 @@ export interface IUserRepository {
     findAll(page: number, limit: number): Promise<User[]>;
     count(): Promise<number>;
     updateUserStatus(userId: string, isAdmin: boolean): Promise<void>;
+    update(userId: string, updateData: Partial<User>): Promise<User | null>;
 }
