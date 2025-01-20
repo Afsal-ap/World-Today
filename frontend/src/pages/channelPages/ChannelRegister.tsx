@@ -1,7 +1,7 @@
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { NewspaperIcon } from '@heroicons/react/24/outline';
-import { useChannelRegisterMutation } from '../../store/slices/channelApiSlice';
+import { useChannelRegisterMutation } from '../../store/slices/postApiSlice';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
@@ -64,38 +64,28 @@ const ChannelRegister = () => {
       try {
         const formData = new FormData();
         
-        console.log('Submitting values:', values);
-
-        formData.append('channelName', values.channelName);
-        formData.append('email', values.email);
-        formData.append('phoneNumber', values.phoneNumber);
-        formData.append('governmentId', values.governmentId);
-        formData.append('websiteOrSocialLink', values.websiteOrSocialLink);
-        formData.append('password', values.password);
-        
-        if (values.logo) {
-          formData.append('logo', values.logo);
-        }
-
-        for (let pair of formData.entries()) {
-          console.log(pair[0], pair[1]);
-        }
+        Object.keys(values).forEach((key) => {
+          if (key !== 'confirmPassword' && values[key as keyof typeof values] !== null) {
+            formData.append(key, values[key as keyof typeof values] as string | Blob);
+          }
+        });
 
         const result = await register(formData).unwrap();
         console.log('Registration response:', result);
 
-        if (result.email) {
+        if (result.success && result.email) {
           navigate('/channel/verify-otp', {
             state: {
-              email: values.email,
-              isChannel: true
+              email: values.email
             }
           });
+        } else {
+          throw new Error(result.message || 'Registration failed');
         }
       } catch (err: any) {
-        console.error('Registration error details:', err);
+        console.error('Registration error:', err);
         formik.setStatus(
-          err.data?.error || err.data?.message || 'Registration failed. Please try again.'
+          err.data?.error || err.message || 'Registration failed. Please try again.'
         );
       }
     },

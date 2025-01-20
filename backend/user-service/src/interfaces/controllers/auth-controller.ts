@@ -19,7 +19,7 @@ export class AuthController {
             // Register the user
             const result = await this.registerUseCase.execute(req.body);
             
-            // Immediately send OTP after successful registration
+           
             try {
                 await this.sendOtpUseCase.execute(req.body.email);
                 console.log('✉️ OTP sent after registration to:', req.body.email);
@@ -80,7 +80,7 @@ export class AuthController {
     async verifyOtp(req: Request, res: Response): Promise<void> {
         try {
             const { email, otp, userData } = req.body;
-            console.log('📝 Verifying OTP Request:', { email, otp, userData });
+            console.log(' Verifying OTP Request:', { email, otp, userData });
 
             const result = await this.verifyOtpUseCase.execute(email, otp, userData);
             
@@ -88,11 +88,11 @@ export class AuthController {
             res.status(200).json({
                 success: true,
                 message: "OTP verified successfully",
-                tokens: result.tokens, // Make sure tokens are included
-                user: result.user     // Include user data if needed
+                tokens: result.tokens, 
+                user: result.user   
             });
         } catch (error: any) {
-            console.error('❌ OTP Verification Error:', error);
+            console.error(' OTP Verification Error:', error);
             res.status(400).json({
                 success: false,
                 message: error.message

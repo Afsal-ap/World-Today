@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useChannelVerifyOtpMutation } from '../../store/slices/channelApiSlice';
+import { useChannelVerifyOtpMutation, useResendOtpMutation } from '../../store/slices/postApiSlice';
 
 const ChannelOtpVerification = () => {
   const [otp, setOtp] = useState('');
@@ -10,16 +10,12 @@ const ChannelOtpVerification = () => {
   const email = location.state?.email;
 
   const [verifyOtp, { isLoading }] = useChannelVerifyOtpMutation();
+  const [resendOtp] = useResendOtpMutation();
 
   const [timer, setTimer] = useState(300); // 5 minutes in seconds
   const [canResend, setCanResend] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('channelToken');
-    if (token) {
-        navigate('/channel/home', { replace: true });
-        return;
-    }
     if (!email) {
         navigate('/channel/register', { replace: true });
         return;
@@ -74,7 +70,7 @@ const ChannelOtpVerification = () => {
 
   const handleResendOtp = async () => {
     try {
-      // Add resend OTP mutation here if needed
+      await resendOtp(email).unwrap();
       setCanResend(false);
       setTimer(300);
     } catch (err: any) {

@@ -1,5 +1,8 @@
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export interface IAuthService {
     hashPassword(password: string): Promise<string>;
@@ -17,17 +20,32 @@ export interface AuthTokens {
 
 export class AuthService implements IAuthService {
     private readonly SALT_ROUNDS = 10;
-    private readonly ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'access-secret-key';
-    private readonly REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'refresh-secret-key';
+    private readonly ACCESS_TOKEN_SECRET: string;
+    private readonly REFRESH_TOKEN_SECRET: string;
     private readonly ACCESS_TOKEN_EXPIRY = '15m';  // 15 minutes
     private readonly REFRESH_TOKEN_EXPIRY = '7d';  // 7 days
+
+    constructor() {
+        // Initialize secrets in constructor
+        const accessSecret = process.env.JWT_SECRET;
+        const refreshSecret = process.env.JWT_REFRESH_SECRET;
+
+        if (!accessSecret || !refreshSecret) {
+            throw new Error('JWT secrets not configured properly');
+        }
+
+        this.ACCESS_TOKEN_SECRET = accessSecret;
+        this.REFRESH_TOKEN_SECRET = refreshSecret;
+        
+        console.log('Auth service initialized with secrets');
+    }
 
     async hashPassword(password: string): Promise<string> {
         console.log('Hashing password...');
         const hashedPassword = await bcrypt.hash(password, this.SALT_ROUNDS);
         return hashedPassword;
-    }
-
+    }  
+              
     async comparePassword(password: string, hashedPassword: string): Promise<boolean> {
         console.log('Comparing passwords...');
         try {
@@ -41,6 +59,10 @@ export class AuthService implements IAuthService {
     }
 
     async generateTokens(userId: string): Promise<AuthTokens> {
+        if (!this.ACCESS_TOKEN_SECRET) {
+            throw new Error('JWT secrets not configured');
+        }
+
         const accessToken = jwt.sign(
             { userId },
             this.ACCESS_TOKEN_SECRET,
@@ -57,6 +79,9 @@ export class AuthService implements IAuthService {
     }
 
     async verifyAccessToken(token: string): Promise<any> {
+        if (!this.ACCESS_TOKEN_SECRET) {
+            throw new Error('Access token secret not configured');
+        }
         try {
             return jwt.verify(token, this.ACCESS_TOKEN_SECRET);
         } catch (error) {
@@ -65,6 +90,9 @@ export class AuthService implements IAuthService {
     }
 
     async verifyRefreshToken(token: string): Promise<any> {
+        if (!this.REFRESH_TOKEN_SECRET) {
+            throw new Error('Refresh token secret not configured');
+        }
         try {
             return jwt.verify(token, this.REFRESH_TOKEN_SECRET);
         } catch (error) {

@@ -1,20 +1,25 @@
 // src/store.ts
 import { configureStore } from '@reduxjs/toolkit';
 import { userApiSlice } from './slices/userApiSlice';
-import { channelApiSlice } from './slices/channelApiSlice';
+import { adminApiSlice } from './slices/adminApiSlice';
 import { adApiSlice } from './slices/adApiSlice';
+import { postApiSlice } from './slices/postApiSlice';
+import adminAuthReducer from './slices/adminAuthSlice';
 
 export const store = configureStore({
   reducer: {
     [userApiSlice.reducerPath]: userApiSlice.reducer,
-    [channelApiSlice.reducerPath]: channelApiSlice.reducer,
+    [adminApiSlice.reducerPath]: adminApiSlice.reducer,
     [adApiSlice.reducerPath]: adApiSlice.reducer,
+    [postApiSlice.reducerPath]: postApiSlice.reducer,
+    adminAuth: adminAuthReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
-      userApiSlice.middleware,   
-      channelApiSlice.middleware,
-      adApiSlice.middleware
+      userApiSlice.middleware,
+      adminApiSlice.middleware,
+      adApiSlice.middleware,
+      postApiSlice.middleware
     ),
 });
 

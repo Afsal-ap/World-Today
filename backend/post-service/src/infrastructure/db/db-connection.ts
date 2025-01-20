@@ -1,4 +1,7 @@
 import mongoose from 'mongoose';
+import dotenv from 'dotenv'; 
+
+dotenv.config();
 
 export const connectToDatabase = async () => {
   const mongoURI = process.env.MONGO_URI;
@@ -7,7 +10,7 @@ export const connectToDatabase = async () => {
     console.error('MONGO_URI environment variable is not defined');
     process.exit(1);  
   }
-
+   
   try {
     // Connecting to MongoDB without deprecated options
     await mongoose.connect(mongoURI);

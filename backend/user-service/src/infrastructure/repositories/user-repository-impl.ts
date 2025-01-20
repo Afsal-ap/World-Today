@@ -23,17 +23,21 @@ export class UserRepositoryImpl implements IUserRepository {
     }
 
     async findByEmail(email: string): Promise<User | null> {
-        const user = await UserModel.findOne({ email });
-        if (!user) return null;
+        const userDoc = await UserModel.findOne({ email });
+        
+        if (!userDoc) {
+            return null;
+        }
 
         return new User({
-            id: user._id.toString(),
-            email: user.email,
-            password: user.password,
-            name: user.name,
-            phone: user.phone,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt
+            id: userDoc._id.toString(),
+            email: userDoc.email,
+            password: userDoc.password,
+            name: userDoc.name,
+            phone: userDoc.phone,
+            isAdmin: userDoc.isAdmin,
+            createdAt: userDoc.createdAt,
+            updatedAt: userDoc.updatedAt
         });
     }
 
@@ -50,5 +54,31 @@ export class UserRepositoryImpl implements IUserRepository {
             createdAt: user.createdAt,
             updatedAt: user.updatedAt
         });
+    }
+
+    async findAll(page: number, limit: number): Promise<User[]> {
+        const skip = (page - 1) * limit;
+        const users = await UserModel.find()
+            .skip(skip)
+            .limit(limit);
+
+        return users.map(user => new User({
+            id: user._id.toString(),
+            email: user.email,
+            password: user.password,
+            name: user.name,
+            phone: user.phone,
+            isAdmin: user.isAdmin,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt
+        }));
+    }
+
+    async count(): Promise<number> {
+        return await UserModel.countDocuments();
+    }
+
+    async updateUserStatus(userId: string, isAdmin: boolean): Promise<void> {
+        await UserModel.findByIdAndUpdate(userId, { isAdmin });
     }
 }

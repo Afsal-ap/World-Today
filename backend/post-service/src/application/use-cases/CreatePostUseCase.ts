@@ -3,18 +3,32 @@ import { PostRepository } from '../../domain/repositories/PostRepository';
 import { Post } from '../../domain/entities/Post';
 
 export class CreatePostUseCase {
-  constructor(private postRepository: PostRepository) {}
 
-  async execute(postDto: PostDto): Promise<Post> {
+  constructor(
+    private postRepository: PostRepository
+  ) {
+  }
+
+  async execute(postDto: PostDto): Promise<Post> {   
+    // Verify category exists
+    
+
+    const now = new Date();
+    
     const post = new Post(
-      'generated-id',  // You can replace this with an actual ID generation logic
+      'temp-id',
       postDto.title,
       postDto.content,
-      postDto.media,
-      new Date(),
-      new Date()
+      postDto.media || '',
+      postDto.mediaType,
+      postDto.scheduledPublishDate,
+      postDto.scheduledPublishDate ? 'scheduled' : 'published',
+      now,
+      now,
+      postDto.channelId,
+      postDto.category
     );
-
+  
     return this.postRepository.create(post);
   }
 }
