@@ -11,7 +11,7 @@ const channelAuthUseCase = new ChannelAuthUseCase(channelRepository);
 const channelAuthController = new ChannelAuthController(channelAuthUseCase);
 
 router.post("/register", 
-  upload.single('logo'),
+  upload.single('logo'),    
   (req, res) => channelAuthController.register(req, res)
 );
 router.post("/login", (req, res) => channelAuthController.login(req, res));

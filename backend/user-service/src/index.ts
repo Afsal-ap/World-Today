@@ -68,7 +68,7 @@ const toggleSavePostUseCase = new ToggleSavePostUseCase(savedPostRepository);
 // Initialize controllers
 const authController = new AuthController(  
     registerUseCase, 
-    loginUseCase,   
+    loginUseCase,       
     authService,
     sendOtpUseCase,
     verifyOtpUseCase

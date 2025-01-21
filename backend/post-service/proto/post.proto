@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package post;
+
+service PostService {
+  rpc GetPostsByIds (PostIdsRequest) returns (PostsResponse) {}
+}
+
+message PostIdsRequest {
+  repeated string post_ids = 1;
+}
+
+message Post {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+  string media_url = 4;
+  string media_type = 5;
+  string channel_name = 6;
+  int32 likes_count = 7;
+  int32 comments_count = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message PostsResponse {
+  repeated Post posts = 1;
+}

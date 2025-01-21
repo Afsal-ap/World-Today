@@ -166,10 +166,30 @@ export const userApiSlice = createApi({
       query: () => '/api/users/posts/saved',
       providesTags: ['SavedPosts'],
       transformResponse: (response: any) => {
-        if (response.status === 'success') {
-          return response.data;
+        console.log('Saved posts response:', response);
+        if (!response) {
+          console.error('Empty response received');
+          return [];
         }
-        throw new Error('Failed to fetch saved posts');
+        if (response.status === 'success') {
+          if (!Array.isArray(response.data)) {
+            console.error('Response data is not an array:', response.data);
+            return [];
+          }
+          return response.data.map((post: any) => ({
+            _id: post.id || post._id, // Handle both cases
+            title: post.title || '',
+            content: post.content || '',
+            media: post.media_url || post.media || '',
+            mediaType: post.media_type || post.mediaType || '',
+            channelName: post.channel_name || post.channelName || 'Unknown Channel',
+            likesCount: post.likes_count || post.likesCount || 0,
+            commentsCount: post.comments_count || post.commentsCount || 0,
+            createdAt: post.created_at || post.createdAt || '',
+            updatedAt: post.updated_at || post.updatedAt || ''
+          }));
+        }
+        return [];
       },
     }),
   }),

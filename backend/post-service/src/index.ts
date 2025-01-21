@@ -9,16 +9,19 @@ import ChannelDashboardRoutes from "./interfaces/routes/ChannelDashboardRoutes";
 import { ChannelRepositoryImpl } from './infrastructure/repositories/ChannelRepositoryImpl';
 import { Request, Response, NextFunction } from 'express';
 import commentRoutes from './interfaces/routes/CommentRoutes';
+import { startGrpcServer } from './infrastructure/grpc/grpcServer';
+
 const app = express();
       
-app.use(cors({
+app.use(cors({       
   origin: 'http://localhost:5173',
   credentials: true
 }));
 app.use(express.json());    
  
 connectToDatabase();     
-
+startGrpcServer();
+   
 import fs from 'fs';
 
 // Create uploads directories if they don't exist
