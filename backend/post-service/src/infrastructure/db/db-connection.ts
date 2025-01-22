@@ -12,7 +12,7 @@ export const connectToDatabase = async () => {
   }
    
   try {
-    // Connecting to MongoDB without deprecated options
+    
     await mongoose.connect(mongoURI);
     console.log('Connected to MongoDB');
   } catch (error) {

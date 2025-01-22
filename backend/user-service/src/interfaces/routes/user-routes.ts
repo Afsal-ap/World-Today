@@ -33,7 +33,6 @@ export const setupUserRoutes = (userController: UserController, savedPostReposit
       }
   
       const postIds = savedPostIds.map(id => id.toString());
-      console.log('postIdssssssssssssssssss:', postIds);
       if (!postIds.every(id => id && id.length > 0)) {
         console.error('Invalid post IDs:', postIds);
         res.status(400).json({ status: 'error', message: 'Invalid post IDs' });

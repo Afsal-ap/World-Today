@@ -3,7 +3,7 @@ syntax = "proto3";
 package post;
 
 service PostService {
-  rpc GetPostsByIds (PostIdsRequest) returns (PostsResponse) {}
+  rpc getPostsByIds (PostIdsRequest) returns (PostsResponse) {}
 }
 
 message PostIdsRequest {

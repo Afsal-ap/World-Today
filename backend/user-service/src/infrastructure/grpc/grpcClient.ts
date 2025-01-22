@@ -12,6 +12,7 @@ const client = new PostService(
   'localhost:50051',
   grpc.credentials.createInsecure()
 );
+//grpc
 
 export const getPostsByIds = (postIds: string[]): Promise<any> => {
   return new Promise((resolve, reject) => {
@@ -21,10 +22,12 @@ export const getPostsByIds = (postIds: string[]): Promise<any> => {
       return;
     }
 
-    console.log('Sending gRPC request with postIds:', postIds);
+    console.log('Sending gRPC request with postIds:', postIds); 
+     
+    // Note the lowercase 'g' in getPostsByIds to match proto definition
     client.getPostsByIds({ post_ids: postIds }, (error: any, response: any) => {
       if (error) {
-        console.error('gRPC client error from client :', error);
+        console.error('gRPC client error:', error);
         reject(error);
       } else {
         console.log('gRPC response:', response);

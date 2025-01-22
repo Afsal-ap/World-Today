@@ -13,6 +13,9 @@ export interface ChannelDocument extends Document {
   password: string;
   refreshToken?: string;
   isVerified: boolean;
+  bio: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const ChannelSchema = new Schema<ChannelDocument>({
@@ -28,6 +31,7 @@ const ChannelSchema = new Schema<ChannelDocument>({
   password: { type: String, required: true },
   refreshToken: { type: String },
   isVerified: { type: Boolean, default: false },
-});
+  bio: { type: String, default: '' },
+}, { timestamps: true });
 
 export default mongoose.model<ChannelDocument>("Channel", ChannelSchema);

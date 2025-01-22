@@ -204,4 +204,37 @@ router.post('/batch', authMiddleware.verifyToken.bind(authMiddleware), async (re
   }
 });
 
+router.get('/channel/posts', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const channelId = (req as any).user.channelId; 
+    console.log(channelId, "channelId");
+    
+    const posts = await PostModel.find({ channelId: channelId })
+      .sort({ createdAt: -1 })
+      .populate('channel', 'channelName');
+      
+    console.log(posts, "posts found");
+       
+    const postsWithDetails = await Promise.all(
+      posts.map(async (post) => {
+        const likesCount = await LikeModel.countDocuments({ postId: post._id });
+        const commentsCount = await CommentModel.countDocuments({ postId: post._id });
+        
+        return {
+          ...post.toObject(),
+          likesCount,
+          commentsCount
+        };
+      })
+    );
+
+    res.json({
+      status: 'success',
+      data: postsWithDetails
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router; 

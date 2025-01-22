@@ -111,7 +111,23 @@ export const postApiSlice = createApi({
         { type: 'Post', id: postId },
         'Post'
       ]
-    })
+    }),
+    getChannelProfile: builder.query({
+      query: () => '/api/channel/dashboard/profile',
+      providesTags: ['Channel']
+    }),
+    updateChannelProfile: builder.mutation({
+      query: (data) => ({
+        url: '/api/channel/dashboard/profile',
+        method: 'PUT',
+        body: data
+      }),
+      invalidatesTags: ['Channel']
+    }),
+    getChannelPosts: builder.query({
+      query: () => '/api/posts/channel/posts',
+      providesTags: ['Post']
+    }),
   }),
 });
 
@@ -128,5 +144,8 @@ export const {
   useDeleteCommentMutation,
   useGetPostQuery,
   useCreateCommentMutation,
-  useGetPostCommentsQuery
+  useGetPostCommentsQuery,
+  useGetChannelProfileQuery,
+  useUpdateChannelProfileMutation,
+  useGetChannelPostsQuery
 } = postApiSlice;
