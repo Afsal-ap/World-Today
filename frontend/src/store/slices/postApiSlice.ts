@@ -13,7 +13,7 @@ export const postApiSlice = createApi({
     },
     credentials: 'include',
   }),
-  tagTypes: ['Post', 'Channel'],
+  tagTypes: ['Post', 'Channel', 'Comments'],
   endpoints: (builder) => ({
     // Post endpoints
     getPosts: builder.query({
@@ -34,6 +34,33 @@ export const postApiSlice = createApi({
           }
           return headers;
         },
+      }),
+      invalidatesTags: ['Post']
+    }),
+    updatePost: builder.mutation({
+      query: ({ postId, formData }) => ({
+        url: `/api/posts/${postId}`,
+        method: 'PUT',
+        body: formData,
+        formData: true,
+        prepareHeaders: (headers: Headers) => {
+          headers.delete('Content-Type');
+          const token = localStorage.getItem('channelToken');
+          if (token) {
+            headers.set('authorization', `Bearer ${token}`);
+          }
+          return headers;
+        },
+      }),
+      invalidatesTags: (_result, _error, { postId }) => [
+        { type: 'Post', id: postId },
+        'Post'
+      ]
+    }),
+    deletePost: builder.mutation({
+      query: (postId) => ({
+        url: `/api/posts/${postId}`,
+        method: 'DELETE',
       }),
       invalidatesTags: ['Post']
     }),
@@ -95,7 +122,17 @@ export const postApiSlice = createApi({
     }),
     getPost: builder.query({
       query: (id) => `/api/posts/${id}`,
-      providesTags: ['Post']
+      transformResponse: (response: any) => {
+        const post = response?.data || {};
+        if (post.createdAt) {
+          post.createdAt = new Date(post.createdAt).toISOString();
+        }
+        if (post.updatedAt) {
+          post.updatedAt = new Date(post.updatedAt).toISOString();
+        }
+        return post;
+      },
+      providesTags: (_result, _error, id) => [{ type: 'Post', id }]
     }),
     createComment: builder.mutation({
       query: ({ postId, content, userId }) => ({
@@ -107,14 +144,57 @@ export const postApiSlice = createApi({
     }),
     getPostComments: builder.query({
       query: (postId) => `/api/posts/${postId}/comments`,
+      transformResponse: (response: any) => {
+        return response?.data || [];
+      },
       providesTags: (_result, _error, postId) => [
         { type: 'Post', id: postId },
-        'Post'
+        { type: 'Comments' }
       ]
     }),
     getChannelProfile: builder.query({
       query: () => '/api/channel/dashboard/profile',
       providesTags: ['Channel']
+    }),
+
+    getAllChannels: builder.query({
+      query: ({ page = 1, limit = 10 }) => ({
+        url: '/api/posts/admin/channels',
+        method: 'GET',
+        params: { page, limit }
+      }),
+      transformResponse: (response: any) => {
+        if (response.status === 'success') {
+          return {
+            channels: response.data.channels.map((channel: any) => ({
+              id: channel.id || channel._id,
+              channelName: channel.channelName,
+              email: channel.email,
+              phoneNumber: channel.phoneNumber,
+              websiteOrSocialLink: channel.websiteOrSocialLink,
+              logo: channel.logo,
+              isVerified: channel.isVerified,
+              createdAt: channel.createdAt,
+              postsCount: channel.postsCount,
+              isBlocked: channel.isBlocked || false
+            })),
+            totalPages: response.data.totalPages,
+            currentPage: response.data.currentPage,
+            totalChannels: response.data.totalChannels
+          };
+        }
+        throw new Error('Failed to fetch channels');
+      },
+      providesTags: (result) => 
+        result
+          ? [
+              ...result.channels.map(({ id }: { id: string }) => ({ 
+                type: 'Channel' as const, 
+                id 
+              })),
+              'Channel'
+            ]
+          : ['Channel']
     }),
     updateChannelProfile: builder.mutation({
       query: (data) => ({
@@ -126,7 +206,26 @@ export const postApiSlice = createApi({
     }),
     getChannelPosts: builder.query({
       query: () => '/api/posts/channel/posts',
-      providesTags: ['Post']
+      providesTags: (result) => 
+        result
+          ? [
+              ...result.data.map(({ _id }: { _id: string }) => ({ 
+                type: 'Post' as const, 
+                id: _id 
+              })),
+              'Post'
+            ]
+          : ['Post']
+    }),
+    toggleChannelBlock: builder.mutation({
+      query: (channelId) => ({
+        url: `/api/posts/admin/channels/${channelId}/toggle-block`,
+        method: 'PUT'
+      }),
+      invalidatesTags: (result, error, channelId) => [
+        { type: 'Channel', id: channelId },
+        'Channel'
+      ]
     }),
   }),
 });
@@ -135,6 +234,8 @@ export const {
   // Post exports
   useGetPostsQuery,
   useCreatePostMutation,
+  useUpdatePostMutation,
+  useDeletePostMutation,
   // Channel exports
   useChannelRegisterMutation,
   useChannelVerifyOtpMutation,
@@ -147,5 +248,7 @@ export const {
   useGetPostCommentsQuery,
   useGetChannelProfileQuery,
   useUpdateChannelProfileMutation,
-  useGetChannelPostsQuery
+  useGetChannelPostsQuery,
+  useGetAllChannelsQuery,
+  useToggleChannelBlockMutation
 } = postApiSlice;

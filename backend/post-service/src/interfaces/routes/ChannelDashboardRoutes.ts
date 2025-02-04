@@ -4,6 +4,7 @@ import { AuthMiddleware } from "../middlewares/AuthMiddleware";
 import { ChannelRepositoryImpl } from "../../infrastructure/repositories/ChannelRepositoryImpl";
 import ChannelModel from "../../infrastructure/db/model/ChannelModel";
 import { Request, Response } from "express";
+import { PostModel } from "../../infrastructure/db/model/PostModel";
 
 const router = Router();
 const channelRepository = new ChannelRepositoryImpl();
@@ -110,5 +111,7 @@ router.put('/profile',
     }
   }
 );
+
+
 
 export default router; 

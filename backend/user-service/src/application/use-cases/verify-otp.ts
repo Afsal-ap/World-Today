@@ -1,38 +1,32 @@
-import { OTPRepository } from "../../domain/repositories/otp-repository";
-import { CompleteRegistrationUseCase } from "./complete-registration";
+import { IOtpRepository } from '../../interfaces/repositories/otp-repository';
+import { IOtp } from '../../domain/entities/otp';
 
-export class VerifyOtpUseCase {
+export interface VerifyOtpUseCase {
+    execute(phoneNumber: string, email: string, otp: string): Promise<boolean>;
+}
+
+export class VerifyOtp implements VerifyOtpUseCase {
     constructor(
-        private readonly otpRepository: OTPRepository,
-        private readonly completeRegistrationUseCase: CompleteRegistrationUseCase
+        private readonly otpRepository: IOtpRepository
     ) {}
 
-    async execute(email: string, otp: string, userData?: any): Promise<any> {
-        console.log('🔍 Verifying OTP:', { email, otp });
+    async execute(phoneNumber: string, email: string, otp: string): Promise<boolean> {
+        const foundOtp = await this.otpRepository.findOtp(phoneNumber, email);
         
-        const savedOtp = await this.otpRepository.findOTP(email);
-        if (!savedOtp) {
+        if (!foundOtp) {
             throw new Error('OTP not found');
         }
 
-        if (savedOtp.isExpired()) {
-            await this.otpRepository.deleteOTP(email);
-            throw new Error('OTP has expired');
-        }
-
-        if (savedOtp.otp !== otp) {
+        if (foundOtp.otp !== otp) {
             throw new Error('Invalid OTP');
         }
 
-        // Delete the used OTP
-        await this.otpRepository.deleteOTP(email);
-
-        // Complete registration if userData exists
-        if (userData) {
-            console.log('📝 Proceeding with registration:', userData.email);
-            return await this.completeRegistrationUseCase.execute(userData);
+        if (foundOtp.isExpired()) {
+            throw new Error('OTP has expired');
         }
 
-        return { success: true };
+        await this.otpRepository.deleteOtp(phoneNumber, email);
+        
+        return true;
     }
 } 

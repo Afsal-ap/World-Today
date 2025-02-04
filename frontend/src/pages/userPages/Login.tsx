@@ -1,31 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../../store/slices/userApiSlice';
 import { NewspaperIcon } from '@heroicons/react/24/outline';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    
     const navigate = useNavigate();
     const [login, { isLoading }] = useLoginMutation();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-
-        try {
-            const result = await login({ email, password }).unwrap();
-            if (result.success) {
-                localStorage.setItem('userToken', result.tokens.accessToken);
-                navigate('/');
-            }
-        } catch (err: any) {
-            console.error('Login error:', err);
-            setError(err?.data?.message || err?.message || 'Login failed');
+    useEffect(() => {
+        const userToken = localStorage.getItem('userToken');
+        if (userToken) {
+            navigate('/');
         }
-    };
+    }, [navigate]);
+
+    const formik = useFormik({
+        initialValues: {
+            email: '',
+            password: '',
+            rememberMe: false
+        },
+        validationSchema: Yup.object({
+            email: Yup.string()
+                .email('Invalid email address')
+                .required('Email is required'),
+            password: Yup.string()
+                .min(6, 'Password must be at least 6 characters')
+                .required('Password is required'),
+            rememberMe: Yup.boolean()
+        }),
+        onSubmit: async (values) => {
+            try {
+                const result = await login({ 
+                    email: values.email, 
+                    password: values.password 
+                }).unwrap();
+                
+                if (result.success) {
+                    localStorage.setItem('userToken', result.tokens.accessToken);
+                    navigate('/');
+                }
+            } catch (err: any) {
+                formik.setStatus(err?.data?.message || err?.message || 'Login failed');
+            }
+        },
+    });
 
     return (
         <div className="min-h-screen flex">
@@ -57,46 +79,50 @@ const Login = () => {
                             }}>
                             Welcome Back
                         </h2>
-                        {error && (
+                        {formik.status && (
                             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative text-center" role="alert">
-                                {error}
+                                {formik.status}
                             </div>
                         )}
                     </div>
 
-                    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    <form className="mt-8 space-y-6" onSubmit={formik.handleSubmit}>
                         <div className="space-y-4">
                             <div>
                                 <input
                                     type="email"
                                     placeholder="Email Address"
-                                    className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
+                                    {...formik.getFieldProps('email')}
+                                    className={`w-full px-4 py-3 bg-gray-100 border rounded-lg focus:outline-none focus:border-blue-500
+                                        ${formik.touched.email && formik.errors.email ? 'border-red-500' : 'border-gray-200'}`}
                                 />
+                                {formik.touched.email && formik.errors.email && (
+                                    <div className="text-red-500 text-sm mt-1">{formik.errors.email}</div>
+                                )}
                             </div>
                             <div>
                                 <input
                                     type="password"
                                     placeholder="Password"
-                                    className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
+                                    {...formik.getFieldProps('password')}
+                                    className={`w-full px-4 py-3 bg-gray-100 border rounded-lg focus:outline-none focus:border-blue-500
+                                        ${formik.touched.password && formik.errors.password ? 'border-red-500' : 'border-gray-200'}`}
                                 />
+                                {formik.touched.password && formik.errors.password && (
+                                    <div className="text-red-500 text-sm mt-1">{formik.errors.password}</div>
+                                )}
                             </div>
                         </div>
 
                         <div className="flex items-center justify-between">
                             <div className="flex items-center">
                                 <input
-                                    id="remember-me"
-                                    name="remember-me"
+                                    id="rememberMe"
                                     type="checkbox"
+                                    {...formik.getFieldProps('rememberMe')}
                                     className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                                 />
-                                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
                                     Remember me
                                 </label>
                             </div>
@@ -109,10 +135,10 @@ const Login = () => {
 
                         <button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isLoading || !formik.isValid}
                             className={`w-full py-3 px-4 bg-gradient-to-r from-purple-950 via-purple-800 to-purple-700 
                                 text-white rounded-lg transition-all duration-300 
-                                ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-90'}`}
+                                ${(isLoading || !formik.isValid) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-90'}`}
                         >
                             {isLoading ? 'Signing in...' : 'Sign in'}
                         </button>

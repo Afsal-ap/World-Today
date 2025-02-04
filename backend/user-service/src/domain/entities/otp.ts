@@ -1,5 +1,14 @@
-export class OTP {
+export interface IOtp {
+    phoneNumber: string;
+    email: string;
+    otp: string;
+    expiryTime: Date;
+    lastSentAt: Date;
+}
+
+export class OTP implements IOtp {
     constructor(
+        public readonly phoneNumber: string,
         public readonly email: string,
         public readonly otp: string,
         public readonly expiryTime: Date = new Date(Date.now() + 5 * 60 * 1000), // 5 minutes expiry

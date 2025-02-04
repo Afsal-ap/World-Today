@@ -9,13 +9,14 @@ export interface RegisterUserDto {
 export interface VerifyOtpDto {
     phone: string;
     otp: string;
+
 }
 
 export interface LoginUserDto {
     email: string;
     password: string;
 }
-
+    
 
 export interface UserResponseDto {
     id: string;
@@ -23,6 +24,7 @@ export interface UserResponseDto {
     name: string;
     phone: string;
     createdAt: Date;
+    isBlocked: boolean;
 }
 
 export interface AuthResponseDto {

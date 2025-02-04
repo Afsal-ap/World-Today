@@ -7,10 +7,11 @@ dotenv.config();
 export interface IAuthService {
     hashPassword(password: string): Promise<string>;
     comparePassword(password: string, hashedPassword: string): Promise<boolean>;
-    generateTokens(userId: string): Promise<AuthTokens>;
     verifyAccessToken(token: string): Promise<any>;
     verifyRefreshToken(token: string): Promise<any>;
     generateAccessTokenFromRefreshToken(refreshToken: string): Promise<string>;
+    getUserByPhoneNumber(phoneNumber: string): Promise<any>;
+    generateTokens(user: any): Promise<AuthTokens>;
 }
 
 export interface AuthTokens {
@@ -58,19 +59,23 @@ export class AuthService implements IAuthService {
         }
     }
 
-    async generateTokens(userId: string): Promise<AuthTokens> {
+    async generateTokens(user: any): Promise<AuthTokens> {
         if (!this.ACCESS_TOKEN_SECRET) {
             throw new Error('JWT secrets not configured');
         }
 
+        // Handle both user object and userId string
+        const userId = typeof user === 'string' ? user : user._id;
+        const email = typeof user === 'string' ? undefined : user.email;
+
         const accessToken = jwt.sign(
-            { userId },
+            { userId, email },
             this.ACCESS_TOKEN_SECRET,
             { expiresIn: this.ACCESS_TOKEN_EXPIRY }
         );
 
         const refreshToken = jwt.sign(
-            { userId },
+            { userId, email },
             this.REFRESH_TOKEN_SECRET,
             { expiresIn: this.REFRESH_TOKEN_EXPIRY }
         );
@@ -112,5 +117,13 @@ export class AuthService implements IAuthService {
         } catch (error) {
             throw new Error('Invalid refresh token');
         }
+    }
+
+    async getUserByPhoneNumber(phoneNumber: string): Promise<any> {
+        // Implement this method to fetch user by phone number
+        // You'll need to inject the user repository
+        // Example:
+        // return this.userRepository.findByPhoneNumber(phoneNumber);
+        throw new Error('Method not implemented');
     }
 }

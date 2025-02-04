@@ -7,7 +7,9 @@ const OtpVerification = () => {
     const [error, setError] = useState('');
     const location = useLocation();
     const navigate = useNavigate();
+    const phoneNumber = location.state?.phoneNumber;
     const email = location.state?.email;
+    const userToken = localStorage.getItem('userToken');
 
     const [verifyOtp] = useVerifyOtpMutation();
     const [resendOtp] = useSendOtpMutation();
@@ -34,57 +36,52 @@ const OtpVerification = () => {
         };
     }, [timer]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    useEffect(() => {
+        if (userToken) {
+            navigate('/');
+        }
+    }, [navigate, userToken]);
+
+    const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const result = await verifyOtp({
-                email: location.state?.email,
-                otp,
-                userData: location.state?.registrationData
-            }).unwrap();
-
-            console.log('Verification result:', result);
-
-            if (result.success) {
-                // Store token if available
-                if (result.tokens?.accessToken) {
-                    localStorage.setItem('userToken', result.tokens.accessToken);
-                }
-                navigate('/login');
-            } else {
-                setError('Verification failed. Please try again.');
+        try { 
+            if(!phoneNumber || !email) {
+                throw new Error('Phone number and email are required');
             }
-        } catch (err: any) {
-            console.error('Verification error:', err);
-            setError(err.data?.message || 'Verification failed');
+            await verifyOtp({ 
+                phoneNumber, 
+                email, 
+                otp 
+            }).unwrap(); 
+            navigate('/login');
+        } catch (error) {
+            setError('Invalid OTP');
         }
     };
 
     const handleResendOtp = async () => {
         try {
+            await resendOtp({ phoneNumber, email }).unwrap();
+            setTimer(30);
             setCanResend(false);
-            setTimer(30); // Reset timer to 30 seconds
-            await resendOtp({ email }).unwrap();
-            setError('');
-            alert('New OTP sent successfully!');
-        } catch (err: any) {
-            setError(err?.data?.message || 'Failed to resend OTP');
+        } catch (error) {
+            setError('Failed to resend OTP');
         }
     };
 
-    if (!email) {
+    if (!phoneNumber) {
         return <Navigate to="/register" />;
     }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
-                <h2 className="text-2xl font-bold text-center mb-6">Verify Your Email</h2>
+                <h2 className="text-2xl font-bold text-center mb-6">Verify Your Phone</h2>
                 <p className="text-gray-600 text-center mb-6">
-                    We've sent a verification code to {email}
+                    We've sent a verification code to {phoneNumber} and {email}
                 </p>
                 {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleVerifyOtp} className="space-y-6">
                     <input
                         type="text"
                         placeholder="Enter OTP"

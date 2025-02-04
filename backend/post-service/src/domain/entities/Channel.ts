@@ -12,5 +12,6 @@ export interface Channel {
     password: string;
     refreshToken?: string;
     isVerified?: boolean;
+    bio?: string;
 }
   

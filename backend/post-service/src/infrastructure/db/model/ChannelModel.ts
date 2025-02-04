@@ -1,37 +1,33 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Document, Schema } from 'mongoose';
 
-export interface ChannelDocument extends Document {
+export interface IChannel {
   channelName: string;
   email: string;
   phoneNumber: string;
-  governmentId: string;
-  logo: {
-    path: string;
-    filename: string;
-  };
   websiteOrSocialLink: string;
+  logo: string;
   password: string;
-  refreshToken?: string;
   isVerified: boolean;
-  bio: string;
+  isBlocked: boolean;
   createdAt: Date;
-  updatedAt: Date;
+  bio: string;
+  refreshToken?: string;
 }
 
-const ChannelSchema = new Schema<ChannelDocument>({
-  channelName: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  phoneNumber: { type: String, required: true },
-  governmentId: { type: String, required: true },
-  logo: {
-    path: { type: String, required: true },
-    filename: { type: String, required: true }
-  },
-  websiteOrSocialLink: { type: String, required: true },
-  password: { type: String, required: true },
-  refreshToken: { type: String },
-  isVerified: { type: Boolean, default: false },
-  bio: { type: String, default: '' },
-}, { timestamps: true });
+export interface ChannelDocument extends IChannel, Document {}
 
-export default mongoose.model<ChannelDocument>("Channel", ChannelSchema);
+const channelSchema = new Schema<ChannelDocument>({
+  channelName: { type: String, required: true },
+  email: { type: String, required: true },
+  phoneNumber: { type: String, required: true },
+  websiteOrSocialLink: { type: String },
+  logo: { type: String },
+  password: { type: String, required: true },
+  isVerified: { type: Boolean, default: false },
+  isBlocked: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+  bio: { type: String, default: '' },
+  refreshToken: { type: String }
+});
+
+export default mongoose.model<ChannelDocument>('Channel', channelSchema);

@@ -56,22 +56,29 @@ export class UserRepositoryImpl implements IUserRepository {
         });
     }
 
-    async findAll(page: number, limit: number): Promise<User[]> {
-        const skip = (page - 1) * limit;
-        const users = await UserModel.find()
-            .skip(skip)
-            .limit(limit);
+    async findAll(skip: number, limit: number): Promise<User[]> {
+        try {
+            const users = await UserModel.find()
+                .select('-password')
+                .skip(skip)
+                .limit(limit)
+                .lean();
 
-        return users.map(user => new User({
-            id: user._id.toString(),
-            email: user.email,
-            password: user.password,
-            name: user.name,
-            phone: user.phone,
-            isAdmin: user.isAdmin,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt
-        }));
+            return users.map(user => new User({
+                id: user._id.toString(),
+                email: user.email,
+                name: user.name,
+                phone: user.phone,
+                isAdmin: user.isAdmin,
+                isBlocked: user.isBlocked,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+                password: ''
+            }));
+        } catch (error) {
+            console.error('Error in findAll:', error);
+            throw error;
+        }
     }
 
     async count(): Promise<number> {
@@ -80,6 +87,17 @@ export class UserRepositoryImpl implements IUserRepository {
 
     async updateUserStatus(userId: string, isAdmin: boolean): Promise<void> {
         await UserModel.findByIdAndUpdate(userId, { isAdmin });
+    } 
+    async updateUserBlockStatus(userId: string, isBlocked: boolean): Promise<void> {
+        const updatedUser = await UserModel.findByIdAndUpdate(
+            userId,
+            { isBlocked },
+            { new: true }  // Return the updated document
+        );
+        
+        if (!updatedUser) {
+            throw new Error('User not found');
+        }
     }
 
     async update(userId: string, updateData: Partial<User>): Promise<User | null> {

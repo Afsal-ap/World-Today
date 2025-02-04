@@ -9,6 +9,7 @@ import path from 'path';
 import { LikeModel } from '../../infrastructure/db/model/LikeModel';
 import { PostModel } from '../../infrastructure/db/model/PostModel';
 import { CommentModel } from '../../infrastructure/db/model/CommentModel';
+import { error } from 'console';
 
 const router = Router();
 const postRepository = new PostRepositoryImpl();
@@ -19,7 +20,7 @@ const authMiddleware = new AuthMiddleware();
 router.post('/',
   authMiddleware.verifyToken.bind(authMiddleware),
   upload.single('media'),
-  async (req, res, next) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       await postController.createPost(req, res);
     } catch (error) {
@@ -28,35 +29,36 @@ router.post('/',
   }
 );
 
-router.get('/', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const userId = req.query.userId as string;
-    const posts = await postRepository.findAll();
-    
-    // Map posts with user-specific like status and comments count
-    const postsWithDetails = await Promise.all(
-      posts.map(async (post) => {
-        const likesCount = await LikeModel.countDocuments({ postId: post.id });
-        const commentsCount = await CommentModel.countDocuments({ postId: post.id });
-        const userLike = await LikeModel.findOne({ 
-          postId: post.id, 
-          userId: userId
-        });
-        
-        return {
-          ...post,
-          likesCount,
-          commentsCount,
-          isLiked: !!userLike
-        };
-      })
-    );
+router.get('/', authMiddleware.verifyToken.bind(authMiddleware), 
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.query.userId as string;
+      const posts = await postRepository.findAll();
+      
+      const postsWithDetails = await Promise.all(
+        posts.map(async (post) => {
+          const likesCount = await LikeModel.countDocuments({ postId: post.id });
+          const commentsCount = await CommentModel.countDocuments({ postId: post.id });
+          const userLike = await LikeModel.findOne({ 
+            postId: post.id, 
+            userId: userId
+          });
+          
+          return {
+            ...post,
+            likesCount,
+            commentsCount,
+            isLiked: !!userLike
+          };
+        })
+      );
 
-    res.status(200).json(postsWithDetails);
-  } catch (error) {
-    next(error);
+      res.status(200).json(postsWithDetails);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.get('/debug/file/:filename', (req, res) => {
   const filePath = path.join(__dirname, '../../../public/uploads/posts', req.params.filename);
@@ -155,14 +157,40 @@ router.get('/posts', authMiddleware.verifyToken.bind(authMiddleware), async (req
   }
 });
 
-router.get('/:id', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const post = await postRepository.findById(req.params.id);
-    res.json(post);
-  } catch (error) {
-    next(error);
+router.get('/:id', authMiddleware.verifyToken.bind(authMiddleware), 
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const postId = req.params.id;
+      const post = await PostModel.findById(postId)
+        .populate('channel', 'channelName');
+     
+
+      if (!post) {
+        res.status(404).json({
+          status: 'error',
+          message: 'Post not found'
+        });
+        return;
+      }
+
+      const likesCount = await LikeModel.countDocuments({ postId });
+      const commentsCount = await CommentModel.countDocuments({ postId });
+
+      const postWithDetails = {
+        ...post.toObject(),
+        likesCount,
+        commentsCount
+      };
+
+      res.json({
+        status: 'success',
+        data: postWithDetails
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.post('/batch', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response): Promise<void> => {
   try {
@@ -207,13 +235,11 @@ router.post('/batch', authMiddleware.verifyToken.bind(authMiddleware), async (re
 router.get('/channel/posts', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const channelId = (req as any).user.channelId; 
-    console.log(channelId, "channelId");
     
     const posts = await PostModel.find({ channelId: channelId })
       .sort({ createdAt: -1 })
       .populate('channel', 'channelName');
       
-    console.log(posts, "posts found");
        
     const postsWithDetails = await Promise.all(
       posts.map(async (post) => {
@@ -236,5 +262,96 @@ router.get('/channel/posts', authMiddleware.verifyToken.bind(authMiddleware), as
     next(error);
   }
 });
+
+router.put('/:postId', authMiddleware.verifyToken.bind(authMiddleware), 
+  upload.single('media'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const channelId = (req as any).user.channelId; 
+      const postId = req.params.postId;
+      
+      const post = await PostModel.findOne({ _id: postId, channelId });
+      
+      if (!post) {
+        res.status(404).json({
+          status: 'error',
+          message: 'Post not found'
+        });
+        return;
+      }
+
+      // Create update data from request body
+      const updateData: any = {
+        ...req.body,
+        updatedAt: new Date()
+      };
+      
+      const updatedPost = await PostModel.findByIdAndUpdate(
+        postId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      ).populate('channel', 'channelName');
+        
+      console.log(updatedPost,"updatedPostttttt");
+      res.json({
+        status: 'success',
+        data: updatedPost
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.delete('/:postId', authMiddleware.verifyToken.bind(authMiddleware), 
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const channelId = (req as any).user.channelId; 
+      const postId = req.params.postId;
+      
+      const post = await PostModel.findOne({ _id: postId, channelId });
+      
+      if (!post) {
+        res.status(404).json({
+          status: 'error',
+          message: 'Post not found'
+        });
+        return;
+      }
+
+      // Delete associated likes and comments
+      await Promise.all([
+        LikeModel.deleteMany({ postId }),
+        CommentModel.deleteMany({ postId }),
+        PostModel.findByIdAndDelete(postId)
+      ]);
+
+      res.json({
+        status: 'success',
+        message: 'Post deleted successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get('/:postId/comments', authMiddleware.verifyToken.bind(authMiddleware),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const postId = req.params.postId;
+      const comments = await CommentModel.find({ postId })
+        .populate('userId', 'channelName')
+        .sort({ createdAt: -1 });
+
+      res.json({
+        status: 'success',
+        data: comments
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router; 

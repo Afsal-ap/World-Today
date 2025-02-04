@@ -5,7 +5,7 @@ import ChannelModel from "../db/model/ChannelModel";
 export class ChannelRepositoryImpl implements ChannelRepository {
   async createChannel(channel: Channel): Promise<Channel> {
     const newChannel = new ChannelModel(channel);
-    return (await newChannel.save()) as Channel;
+    return (await newChannel.save()) as unknown as Channel;
   }
 
   async findByEmail(email: string): Promise<Channel | null> {

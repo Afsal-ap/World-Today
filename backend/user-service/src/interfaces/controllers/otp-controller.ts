@@ -10,17 +10,17 @@ export class OTPController {
 
     async sendOtp(req: Request, res: Response): Promise<void> {
         try {
-            const { email } = req.body;
-            
-            if (!email) {
-                res.status(400).json({ success: false, message: "Email is required" });
+            const { phoneNumber, email } = req.body;
+            console.log('📞 Sending OTP to:', phoneNumber);
+            if (!phoneNumber) {
+                res.status(400).json({ success: false, message: "Phone number is required" });
                 return;
             }
 
-            await this.sendOtpUseCase.execute(email);
+            await this.sendOtpUseCase.execute(phoneNumber, email);
             res.status(200).json({ 
                 success: true, 
-                message: "OTP sent successfully to your email" 
+                message: "OTP sent successfully to your phone" 
             });
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
@@ -29,22 +29,21 @@ export class OTPController {
 
     async verifyOtp(req: Request, res: Response): Promise<void> {
         try {
-            const { email, otp, userData } = req.body;
-            console.log('📝 Verifying OTP with data:', { email, otp, userData });
+            const { phoneNumber, email, otp } = req.body;
+            console.log('📝 Verifying OTP with data:', { phoneNumber, email, otp });
 
-            if (!email || !otp) {
+            if (!phoneNumber || !email || !otp) {
                 res.status(400).json({
                     success: false,
-                    message: 'Email and OTP are required'
+                    message: 'Phone number, email and OTP are required'
                 });
                 return;
             }
 
-            const result = await this.verifyOtpUseCase.execute(email, otp, userData);
-            
+            const result = await this.verifyOtpUseCase.execute(phoneNumber, email, otp);
             res.status(200).json({
                 success: true,
-                message: 'OTP verified and registration completed',
+                message: 'OTP verified successfully',
                 data: result
             });
         } catch (error: any) {

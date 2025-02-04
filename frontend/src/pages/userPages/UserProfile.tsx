@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGetProfileQuery, useUpdateProfileMutation } from '../../store/slices/userApiSlice';
-import { FiEdit2, FiUser, FiMail, FiPhone, FiCalendar, FiSave, FiX } from 'react-icons/fi';
+import { FiEdit2, FiUser, FiMail, FiPhone, FiCalendar, FiSave, FiX, FiLogOut } from 'react-icons/fi';
 import SavedPosts from '../../components/SavedPosts';
 
 interface UserProfile {
@@ -59,6 +59,11 @@ const UserProfile = () => {
     setIsEditing(false);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('userToken');
+    navigate('/login');
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -71,7 +76,7 @@ const UserProfile = () => {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative text-center">
-          {(error as any)?.data?.message || 'Failed to load profile data'}
+          {String((error as any)?.data?.message || 'Failed to load profile data')}
         </div>
       </div>
     );
@@ -85,15 +90,24 @@ const UserProfile = () => {
           <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-8">
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold text-white">User Profile</h1>
-              {!isEditing && (
+              <div className="flex gap-3">
+                {!isEditing && (
+                  <button
+                    onClick={handleEdit}
+                    className="flex items-center gap-2 bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition-all duration-200"
+                  >
+                    <FiEdit2 className="w-4 h-4" />
+                    Edit Profile
+                  </button>
+                )}
                 <button
-                  onClick={handleEdit}
-                  className="flex items-center gap-2 bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition-all duration-200"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200"
                 >
-                  <FiEdit2 className="w-4 h-4" />
-                  Edit Profile
+                  <FiLogOut className="w-4 h-4" />
+                  Logout
                 </button>
-              )}
+              </div>
             </div>
           </div>
 
@@ -105,11 +119,11 @@ const UserProfile = () => {
                 <div className="flex flex-col items-center justify-center mb-8">
                   <div className="w-32 h-32 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg mb-4">
                     <span className="text-4xl font-bold text-white">
-                      {profile.name.charAt(0).toUpperCase()}
+                      {profile?.name ? profile.name.charAt(0).toUpperCase() : '?'}
                     </span>
                   </div>
-                  <h2 className="text-2xl font-semibold text-gray-800">{profile.name}</h2>
-                  <p className="text-gray-500">{profile.email}</p>
+                  <h2 className="text-2xl font-semibold text-gray-800">{profile?.name || 'No Name'}</h2>
+                  <p className="text-gray-500">{profile?.email || 'No Email'}</p>
                 </div>
 
                 {/* Profile Details */}

@@ -1,75 +1,173 @@
 import { useState } from 'react';
-import { useGetAllChannelsQuery } from '../../store/slices/adminApiSlice';
+import { useGetAllChannelsQuery, useToggleChannelBlockMutation } from '../../store/slices/postApiSlice';
+import { format, isValid, parseISO } from 'date-fns';
+import { Button, Spinner } from 'react-bootstrap';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface Channel {
   id: string;
-  name: string;
-  ownerEmail: string;
-  isActive: boolean;
-  articlesCount: number;
+  channelName: string;
+  email: string;
+  logo: string;
+  websiteOrSocialLink: string;
+  phoneNumber: string;
+  isVerified: boolean;
+  postsCount: number;
+  createdAt: string;
+  isBlocked: boolean;
 }
 
 const ChannelsList = () => {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useGetAllChannelsQuery({ page, limit: 10 });
+  const [loadingChannelId, setLoadingChannelId] = useState<string | null>(null);
+  const { data: response, isLoading, error } = useGetAllChannelsQuery({ page, limit: 10 });
+  const [toggleBlock] = useToggleChannelBlockMutation();
+
+  const handleToggleBlock = async (channelId: string, currentStatus: boolean) => {
+    setLoadingChannelId(channelId);
+    try {
+      const result = await toggleBlock(channelId).unwrap();
+      toast.success(`Channel ${result.isBlocked ? 'blocked' : 'unblocked'} successfully`, {
+        position: "top-right",
+        autoClose: 3000
+      });
+    } catch (err) {
+      toast.error('Failed to update channel status', {
+        position: "top-right",
+        autoClose: 3000
+      });
+      console.error('Failed to toggle block status:', err);
+    } finally {
+      setLoadingChannelId(null);
+    }
+  };
 
   if (isLoading) {
-    return <div className="text-center">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
   }
 
+  if (error) {
+    return <div className="text-red-600 p-4">Error loading channels</div>;
+  }
+
+  const { channels, totalPages, currentPage, totalChannels } = response || {};
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '-';
+    const date = parseISO(dateString);
+    return isValid(date) ? format(date, 'yyyy-MM-dd HH:mm:ss') : '-';
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <h2 className="text-2xl font-bold text-gray-900">Channels Management</h2>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Channel Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Channel</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Articles</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Posts</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {data?.channels.map((channel: Channel) => (
-              <tr key={channel.id}>
-                <td className="px-6 py-4 whitespace-nowrap">{channel.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{channel.ownerEmail}</td>
+            {channels.map((channel: Channel) => (
+              <tr key={channel.id} className={channel.isBlocked ? 'bg-red-50' : ''}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 flex-shrink-0">
+                      <img 
+                        className="h-10 w-10 rounded-full object-cover" 
+                        src={`http://localhost:3000/uploads/${channel.logo}`} 
+                        alt={channel.channelName}
+                      />
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">{channel.channelName}</div>
+                      <div className="text-sm text-gray-500">{channel.websiteOrSocialLink}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{channel.email}</div>
+                  <div className="text-sm text-gray-500">{channel.phoneNumber}</div>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    channel.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    channel.isVerified 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
                   }`}>
-                    {channel.isActive ? 'Active' : 'Inactive'}
+                    {channel.isVerified ? 'Verified' : 'Pending'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">{channel.articlesCount}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {channel.postsCount}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {formatDate(channel.createdAt)}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <button className="text-blue-600 hover:text-blue-900">
-                    View Details
-                  </button>
+                  <Button 
+                    onClick={() => handleToggleBlock(channel.id, channel.isBlocked)}
+                    disabled={loadingChannelId === channel.id}
+                    variant={channel.isBlocked ? "success" : "danger"}
+                    style={{ minWidth: '140px' }}
+                  >
+                    {loadingChannelId === channel.id ? (
+                      <>
+                        <Spinner animation="border" size="sm" className="me-2" />
+                        {channel.isBlocked ? "Unblocking..." : "Blocking..."}
+                      </>
+                    ) : (
+                      channel.isBlocked ? "Unblock Channel" : "Block Channel"
+                    )}
+                  </Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* Pagination */}
-        {data && (
+        {totalPages > 1 && (
           <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+              className="px-4 py-2 border rounded text-sm disabled:opacity-50 bg-white hover:bg-gray-50"
             >
               Previous
             </button>
-            <span>Page {page}</span>
+            <div className="flex items-center space-x-2">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setPage(i + 1)}
+                  className={`px-3 py-1 rounded ${
+                    page === i + 1
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
             <button
               onClick={() => setPage(p => p + 1)}
-              disabled={!data.channels.length}
-              className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+              disabled={page >= totalPages}
+              className="px-4 py-2 border rounded text-sm disabled:opacity-50 bg-white hover:bg-gray-50"
             >
               Next
             </button>

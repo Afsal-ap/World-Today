@@ -4,6 +4,7 @@ import { UpdateUserStatusUseCase } from '../../application/use-cases/admin/updat
 import { AdminLoginUseCase } from '../../application/use-cases/admin/admin-login';
 import { CreateCategoryUseCase } from '../../application/use-cases/admin/category-usecase';
 import { ICategoryRepository } from '../../domain/repositories/category-repository';
+import { UpdateUserBlockStatusUseCase } from '../../application/use-cases/admin/updateUserBlockStatus';
 
 export class AdminController {
     constructor(
@@ -11,18 +12,27 @@ export class AdminController {
         private readonly updateUserStatusUseCase: UpdateUserStatusUseCase,
         private readonly adminLoginUseCase: AdminLoginUseCase,
         private readonly createCategoryUseCase: CreateCategoryUseCase,
-        private readonly categoryRepository: ICategoryRepository
+        private readonly categoryRepository: ICategoryRepository,
+        private readonly updateUserBlockStatusUseCase: UpdateUserBlockStatusUseCase
     ) {}
 
     async getAllUsers(req: Request, res: Response): Promise<void> {
         try {
             const page = parseInt(req.query.page as string) || 1;
             const limit = parseInt(req.query.limit as string) || 10;
+            console.log('Fetching users with page:', page, 'limit:', limit);
             
             const result = await this.getAllUsersUseCase.execute(page, limit);
+            console.log('Users fetched successfully:', result);
+            
             res.status(200).json(result);
         } catch (error: any) {
-            res.status(500).json({ message: error.message });
+            console.error('Error in getAllUsers:', error);
+            res.status(500).json({ 
+                status: 'error',
+                message: error.message || 'Internal server error',
+                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            });
         }
     }
 
@@ -74,6 +84,23 @@ export class AdminController {
             res.status(200).json({ message: 'Category deleted successfully' });
         } catch (error: any) {
             res.status(500).json({ message: error.message });
+        }
+    }
+
+    async updateUserBlockStatus(req: Request, res: Response): Promise<void> {
+        try {
+            const { userId } = req.params;
+            const { isBlocked } = req.body;
+            await this.updateUserBlockStatusUseCase.execute(userId, isBlocked);
+            res.status(200).json({ 
+                status: 'success',
+                message: `User ${isBlocked ? 'blocked' : 'unblocked'} successfully` 
+            });
+        } catch (error: any) {
+            res.status(500).json({ 
+                status: 'error',
+                message: error.message 
+            });
         }
     }
 }    

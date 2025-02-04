@@ -10,6 +10,7 @@ import { ChannelRepositoryImpl } from './infrastructure/repositories/ChannelRepo
 import { Request, Response, NextFunction } from 'express';
 import commentRoutes from './interfaces/routes/CommentRoutes';
 import { startGrpcServer } from './infrastructure/grpc/grpcServer';
+import adminRoutes from './interfaces/routes/adminRoutes';
 
 const app = express();
       
@@ -47,6 +48,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/posts', commentRoutes);
 app.use('/auth', ChannelAuthRoutes);
 app.use('/api/channel/dashboard', ChannelDashboardRoutes);
+app.use('/api/posts/admin', adminRoutes);
 
 // Serve static files from the public directory
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));

@@ -3,10 +3,33 @@ import * as Yup from 'yup';
 import { NewspaperIcon } from '@heroicons/react/24/outline';
 import { useRegisterMutation } from '../../store/slices/userApiSlice';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const Register = () => {
   const [register, { isLoading }] = useRegisterMutation();
   const navigate = useNavigate();
+  const userToken = localStorage.getItem('userToken');
+
+  // Add this useEffect to check for existing token
+  useEffect(() => {
+    if (userToken) {
+      navigate('/');
+    }
+  }, [navigate, userToken]);
+
+  // Helper function to format phone number
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digit characters except +
+    let cleaned = value.replace(/[^\d+]/g, '');
+    
+    // Ensure it starts with + and has only digits after
+    if (!cleaned.startsWith('+')) {
+        cleaned = '+' + cleaned.replace(/\D/g, '');
+    }
+    
+    // Limit to 15 characters (including +)
+    return cleaned.slice(0, 15);
+  };
 
   // Validation Schema
   const validationSchema = Yup.object({
@@ -33,7 +56,7 @@ const Register = () => {
     
     phone: Yup.string()
       .required('Phone number is required')
-      .matches(/^\d{10}$/, 'Phone number must be 10 digits')
+      .matches(/^\+\d{10,15}$/, 'Phone number must include country code (e.g., +91XXXXXXXXXX)')
   });
 
   const formik = useFormik({
@@ -42,22 +65,29 @@ const Register = () => {
       email: '',
       password: '',
       confirmPassword: '',
-      phone: ''
+      phone: '+91' // Initialize with country code
     },
     validationSchema,
     onSubmit: async (values) => {
+      const formattedPhone = formatPhoneNumber(values.phone);
+      console.log('Formatted phone number:', formattedPhone);
+
+      if (!/^\+\d{10,15}$/.test(formattedPhone)) {
+        formik.setStatus('Invalid phone number format');
+        return;
+      }
+
       try {
-        const result = await register(values).unwrap();
+        const result = await register({
+          ...values,
+          phone: formattedPhone
+        }).unwrap();
+        
         if (result.success) {
           navigate('/verify-otp', { 
             state: { 
+              phoneNumber: formattedPhone,
               email: values.email,
-              registrationData: {
-                email: values.email,
-                password: values.password,
-                name: values.name,
-                phone: values.phone
-              }
             } 
           });
         }
@@ -67,6 +97,12 @@ const Register = () => {
       }
     },
   });
+
+  // Handle phone number input changes
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatPhoneNumber(e.target.value);
+    formik.setFieldValue('phone', formattedValue);
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -166,9 +202,11 @@ const Register = () => {
             {/* Phone Field */}
             <div>
               <input
-                type="text"
-                placeholder="Phone Number"
-                {...formik.getFieldProps('phone')}
+                type="tel"
+                placeholder="Phone Number (e.g., +91XXXXXXXXXX)"
+                value={formik.values.phone}
+                onChange={handlePhoneChange}
+                onBlur={formik.handleBlur('phone')}
                 className={`w-full px-4 py-3 bg-gray-100 border rounded-lg focus:outline-none focus:border-blue-500 ${
                   formik.touched.phone && formik.errors.phone ? 'border-red-500' : 'border-gray-200'
                 }`}
@@ -176,6 +214,9 @@ const Register = () => {
               {formik.touched.phone && formik.errors.phone && (
                 <div className="text-red-500 text-sm mt-1">{formik.errors.phone}</div>
               )}
+              <div className="text-xs text-gray-500 mt-1">
+                Start with + followed by country code (e.g., +91 for India)
+              </div>
             </div>
 
             {/* Submit Button */}

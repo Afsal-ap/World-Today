@@ -1,11 +1,13 @@
 import { User } from '../entities/user';
+import { IUser } from '../entities/user';
 
 export interface IUserRepository {
     create(user: User): Promise<User>;
     findByEmail(email: string): Promise<User | null>;
     findById(id: string): Promise<User | null>;
-    findAll(page: number, limit: number): Promise<User[]>;
+    findAll(skip: number, limit: number): Promise<IUser[]>;
     count(): Promise<number>;
     updateUserStatus(userId: string, isAdmin: boolean): Promise<void>;
     update(userId: string, updateData: Partial<User>): Promise<User | null>;
-}
+    updateUserBlockStatus(userId: string, isBlocked: boolean): Promise<void>;
+}  

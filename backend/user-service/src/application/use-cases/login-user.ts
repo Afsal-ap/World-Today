@@ -18,12 +18,16 @@ export class LoginUserUseCase {
             throw new Error('Invalid email or password');
         }
 
+        if (user.isBlocked) {
+            throw new Error('Your account has been blocked. Please contact support.');
+        }
+
         // Verify password
         const isPasswordValid = await this.authService.comparePassword(
             credentials.password,
             user.password
         );
-
+    
         console.log('🔐 Password validation:', { 
             email: credentials.email, 
             isValid: isPasswordValid 
@@ -43,7 +47,8 @@ export class LoginUserUseCase {
                 email: user.email,
                 name: user.name,
                 phone: user.phone,
-                createdAt: user.createdAt!
+                createdAt: user.createdAt!,
+                isBlocked: user.isBlocked 
             },
             tokens
         };

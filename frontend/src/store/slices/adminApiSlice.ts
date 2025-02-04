@@ -13,7 +13,7 @@ export const adminApiSlice = createApi({
       return headers;
     },
   }), 
-  tagTypes: ['Category'],
+  tagTypes: ['Category', 'Users', 'Channels'],
   endpoints: (builder) => ({
     adminLogin: builder.mutation({
       query: (credentials) => ({
@@ -27,16 +27,44 @@ export const adminApiSlice = createApi({
     }),
     getAllUsers: builder.query({
       query: ({ page = 1, limit = 10 }) => `/admin/users?page=${page}&limit=${limit}`,
+      transformResponse: (response: any) => {
+        console.log('Response from server:', response);
+        if (response.status === 'success') {
+          return {
+            users: response.data.users.map((user: any) => ({
+              _id: user.id,
+              name: user.name,
+              email: user.email,
+              isAdmin: user.isAdmin,
+              isBlocked: user.isBlocked
+            })),
+            totalPages: response.data.totalPages,
+            currentPage: response.data.currentPage
+          };
+        }
+        throw new Error('Failed to fetch users');
+      },
+      providesTags: ['Users']
     }),
-    getAllChannels: builder.query({
-      query: ({ page = 1, limit = 10 }) => `/admin/channels?page=${page}&limit=${limit}`,
-    }),
+   
     updateUserStatus: builder.mutation({
       query: ({ userId, isAdmin }) => ({
         url: `/admin/users/${userId}/status`,
         method: 'PATCH',
         body: { isAdmin },
       }),
+      invalidatesTags: ['Users']
+    }),
+    updateUserBlockStatus: builder.mutation({
+      query: ({ userId, isBlocked }) => ({
+        url: `/admin/users/${userId}/block`,
+        method: 'PATCH',
+        body: { isBlocked },
+      }),
+      invalidatesTags: ['Users'],
+      transformErrorResponse: (response: { status: number, data: any }) => {
+        return response.data?.message || 'Failed to update block status';
+      },
     }),
     getCategories: builder.query({
       query: () => '/admin/categories',
@@ -64,8 +92,8 @@ export const {
   useAdminLoginMutation,
   useGetDashboardStatsQuery,
   useGetAllUsersQuery,
-  useGetAllChannelsQuery,
   useUpdateUserStatusMutation,
+  useUpdateUserBlockStatusMutation,
   useGetCategoriesQuery,
   useCreateCategoryMutation,
   useDeleteCategoryMutation,

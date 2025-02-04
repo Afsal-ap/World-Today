@@ -22,56 +22,62 @@ import Categories from './pages/adminPages/Categories';
 import SinglePost from './components/DetailedPost';
 import UserLayout from './components/layout/UserLayout';
 import UserProfile from './pages/userPages/UserProfile';
+import DetailChannelPost from './components/DetailChannelPost';
 // import AdvertisersList from './pages/adminPages/AdvertisersList';
 // import AdminSettings from './pages/adminPages/AdminSettings';
-            
+import { ToastContainer } from 'react-toastify';
 function App() {
   return (    
-    <Router>
-      <Routes>
-        {/* Public Routes with Header */}
-        <Route element={<UserLayout><Outlet /></UserLayout>}>
-          <Route path="/" element={<Home />} />
-          <Route path="/post/:postId" element={<SinglePost />} />
-          <Route path="/profile" element={<UserProfile />} />
-        </Route>
-
-        {/* Public Routes without Header */}
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/verify-otp" element={<OtpVerification />} />
-
-        {/* Channel Authentication Routes */}
-        <Route path="/channel/register" element={<ChannelRegister />} />
-        <Route path="/channel/login" element={<ChannelLogin />} />
-        <Route path="/channel/verify-otp" element={<ChannelOtpVerification />} />
-
-        {/* Channel Dashboard Routes - Nested under ChannelLayout */}
-        <Route path="/channel" element={<ChannelLayout />}>
-          <Route index element={<Navigate to="/channel/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardOverview />} />
-          <Route path="home" element={<DashboardOverview />} />
-          <Route path="articles" element={<ArticlesList />} />
-          <Route path="create" element={<CreatePost />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="account" element={<AccountSettings />} />
-        </Route>
-
-        {/* Public admin route */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-
-        {/* Protected admin routes */}
-        <Route element={<ProtectedAdminRoute />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="users" element={<UsersList />} />
-            <Route path="channels" element={<ChannelsList />} />
-            <Route path="categories" element={<Categories />} />
+    <>
+      <Router>
+        <Routes>
+          {/* Public Routes with Header */}
+          <Route element={<UserLayout><Outlet /></UserLayout>}>
+            <Route path="/" element={<Home />} />
+            <Route path="/post/:postId" element={<SinglePost />} />
+            <Route path="/profile" element={<UserProfile />} />
           </Route>
-        </Route>
-      </Routes>
-    </Router>
+
+          {/* Public Routes without Header */}
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/verify-otp" element={<OtpVerification />} />
+
+          {/* Channel Authentication Routes */}
+          <Route path="/channel/register" element={<ChannelRegister />} />
+          <Route path="/channel/login" element={<ChannelLogin />} />
+          <Route path="/channel/verify-otp" element={<ChannelOtpVerification />} />
+
+          {/* Channel Dashboard Routes - Nested under ChannelLayout */}
+          <Route path="/channel" element={<ChannelLayout />}>
+            <Route index element={<Navigate to="/channel/dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardOverview />} />
+            <Route path="home" element={<DashboardOverview />} />
+            <Route path="articles" element={<ArticlesList />} />
+            <Route path="create" element={<CreatePost />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="account" element={<AccountSettings />} />
+          </Route>
+
+          {/* Public admin route */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+
+          {/* Protected admin routes */}
+          <Route element={<ProtectedAdminRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="users" element={<UsersList />} />
+              <Route path="channels" element={<ChannelsList />} />
+              <Route path="categories" element={<Categories />} />
+            </Route>
+          </Route>
+
+          <Route path="/channel/posts/:postId" element={<DetailChannelPost />} />
+        </Routes>
+      </Router>
+      <ToastContainer />
+    </>
   );
 }
 

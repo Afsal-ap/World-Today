@@ -5,6 +5,7 @@ interface User {
   id?: string;
   email?: string;
   name?: string;
+  isBlocked?: boolean;
   // ... add other user properties
 }
 
@@ -37,7 +38,11 @@ export const userApiSlice = createApi({
       query: (userData) => ({
         url: '/auth/register',
         method: 'POST',
-        body: userData,    
+        body: {
+          ...userData,
+          // Ensure phone number is properly formatted
+          phone: userData.phone.replace(/[^\d+]/g, '')
+        },    
       }),
       transformResponse: (response: any) => {
         console.log('Registration response:', response);
@@ -67,10 +72,12 @@ export const userApiSlice = createApi({
       transformResponse: (response: any) => {
         console.log('Full login response:', response);
         if (response.user && response.tokens) {
+          // Check if user is blocked
+          if (response.user.isBlocked) {
+            throw new Error('Your account has been blocked. Please contact support.');
+          }
           const token = response.tokens.accessToken;
-          console.log('Token being stored:', token);
           localStorage.setItem('userToken', token);
-          console.log('Token after storage:', localStorage.getItem('userToken'));
           return {
             success: true,
             user: response.user,
@@ -91,14 +98,18 @@ export const userApiSlice = createApi({
       query: (data) => ({
         url: '/auth/send-otp',
         method: 'POST',
-        body: { email: data.email },
+        body: { phoneNumber: data.phoneNumber },
       }),
     }),
     verifyOtp: builder.mutation({
       query: (data) => ({
         url: '/auth/verify-otp',
         method: 'POST',
-        body: data,
+        body: {
+          phoneNumber: data.phoneNumber,
+          email: data.email,
+          otp: data.otp,
+        },
       }),
       transformResponse: (response: any) => {
         console.log('OTP Verification Response:', response);
