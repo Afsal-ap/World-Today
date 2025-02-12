@@ -42,7 +42,7 @@ const DetailChannelPost = () => {
         {post.media && (
           <div className="w-full h-96 relative">
             <img
-              src={`http://localhost:3004/uploads/${post.media}`}
+              src={`http://localhost:3004${post.media}`}
               alt={post.title}
               className="w-full h-full object-cover"
             />

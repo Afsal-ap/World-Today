@@ -6,35 +6,73 @@ interface User {
   email?: string;
   name?: string;
   isBlocked?: boolean;
+  
   // ... add other user properties
 }
-
+ 
 interface ProfileResponseDto {
   status: string;
   data: User;
   message?: string;
 }
 
+interface BaseQueryArgs {
+  url: string;
+  method: string;
+  body?: any;
+  credentials?: RequestCredentials;
+}
+
+const baseQuery = fetchBaseQuery({ 
+  baseUrl: 'http://localhost:3000',  
+  credentials: 'include',
+  prepareHeaders: (headers) => {
+      const token = localStorage.getItem('userToken');
+      if (token) {
+          headers.set('Authorization', `Bearer ${token}`);
+      } else {
+          headers.delete('Authorization'); // Ensure old headers are removed
+      }
+      return headers;
+  }
+});
+
+const baseQueryWithReauth = async (args: BaseQueryArgs, api: any, extraOptions: any) => {
+    let result = await baseQuery(args, api, extraOptions);
+    
+    if (result.error?.status === 401) {
+        // Try to refresh token
+        const refreshResult = await baseQuery(
+            { 
+                url: '/auth/refresh-token', 
+                method: 'POST',
+                credentials: 'include'
+            },
+            api,
+            extraOptions
+        );
+        
+        if (refreshResult.data) {
+            // Store the new token
+            localStorage.setItem('userToken', (refreshResult.data as { accessToken: string }).accessToken);
+            // Retry the original query with new token
+            result = await baseQuery(args, api, extraOptions);
+        } else {
+            // Refresh failed - logout
+            localStorage.removeItem('userToken');
+            localStorage.removeItem('refreshToken');
+            window.location.href = '/login';
+        }
+    }
+    return result;
+};
+
 export const userApiSlice = createApi({
   tagTypes: ['Profile', 'SavedPosts'],
   reducerPath: 'userApi',
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: 'http://localhost:3000',
-    credentials: 'include',
-    prepareHeaders: (headers, { getState }) => {
-      const token = localStorage.getItem('userToken');
-      console.log('Token in prepareHeaders:', token);
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-        console.log('Full authorization header:', headers.get('authorization'));
-      } else {
-        console.log('No token found in localStorage'); 
-      }
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
-    register: builder.mutation({
+    register: builder.mutation<{ success: boolean; data: any; message?: string }, any>({
       query: (userData) => ({
         url: '/auth/register',
         method: 'POST',
@@ -63,45 +101,42 @@ export const userApiSlice = createApi({
         };
       },
     }),
-    login: builder.mutation({
+    login: builder.mutation<{ 
+      success: boolean; 
+      user: User; 
+      tokens: {
+        accessToken: string;
+        refreshToken: string;
+      }
+    }, any>({
       query: (credentials) => ({
         url: '/auth/login',
         method: 'POST',
         body: credentials,
+        credentials: 'include'
       }),
       transformResponse: (response: any) => {
-        console.log('Full login response:', response);
-        if (response.user && response.tokens) {
-          // Check if user is blocked
-          if (response.user.isBlocked) {
-            throw new Error('Your account has been blocked. Please contact support.');
-          }
-          const token = response.tokens.accessToken;
-          localStorage.setItem('userToken', token);
-          return {
-            success: true,
-            user: response.user,
-            tokens: response.tokens
-          };
+        if (response.success && response.user && response.tokens) {
+          return response;
         }
-        throw new Error('Login failed');
-      },     
+        throw new Error(response.error || 'Login failed');
+      },
       transformErrorResponse: (error: { status: number; data: any }) => {
-        console.log('Login error response:', error);
-        return {
-          success: false,
-          error: error.data?.error || 'Login failed'
-        };
+        return error.data;
       },
     }),
-    sendOtp: builder.mutation({
+    sendOtp: builder.mutation<any, { phoneNumber: string }>({
       query: (data) => ({
         url: '/auth/send-otp',
         method: 'POST',
         body: { phoneNumber: data.phoneNumber },
       }),
     }),
-    verifyOtp: builder.mutation({
+    verifyOtp: builder.mutation<any, { 
+      phoneNumber: string; 
+      email: string; 
+      otp: string 
+    }>({
       query: (data) => ({
         url: '/auth/verify-otp',
         method: 'POST',
@@ -121,12 +156,15 @@ export const userApiSlice = createApi({
           status: response.status,
           data: response.data
         };
-      }
+      }    
     }),
-    getProfile: builder.query({
+    getProfile: builder.query<User, void>({
       query: () => ({
         url: '/api/users/profile',
         method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+        }
       }),
       transformResponse: (response: any) => {
         console.log('Profile response:', response);
@@ -135,7 +173,7 @@ export const userApiSlice = createApi({
         }
         throw new Error('Failed to fetch profile');
       },
-      providesTags: [{ type: 'Profile', id: 'LIST' }], // Associate the query with the Profile tag
+      providesTags: [{ type: 'Profile', id: 'LIST' }],
     }),
     updateProfile: builder.mutation<ProfileResponseDto, Partial<User>>({
       query: (data) => ({
@@ -160,7 +198,10 @@ export const userApiSlice = createApi({
       },
       invalidatesTags: [{ type: 'Profile', id: 'LIST' }],
     }),
-    toggleSavePost: builder.mutation({
+    toggleSavePost: builder.mutation<any, { 
+      postId: string; 
+      method: 'POST' | 'DELETE' 
+    }>({
       query: ({ postId, method }) => ({
         url: '/api/users/posts/save',
         method: method,
@@ -173,8 +214,19 @@ export const userApiSlice = createApi({
         throw new Error('Failed to toggle save status');
       },
     }),
-    getSavedPosts: builder.query({
-      query: () => '/api/users/posts/saved',
+    getSavedPosts: builder.query<Array<{
+      _id: string;
+      title: string;
+      content: string;
+      media: string;
+      mediaType: string;
+      channelName: string;
+      likesCount: number;
+      commentsCount: number;
+      createdAt: string;
+      updatedAt: string;
+    }>, void>({
+      query : () => ({ url: '/api/users/posts/saved', method: 'GET' }),
       providesTags: ['SavedPosts'],
       transformResponse: (response: any) => {
         console.log('Saved posts response:', response);

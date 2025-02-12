@@ -39,7 +39,8 @@ export class LoginUserUseCase {
 
         // Generate tokens
         const tokens = await this.authService.generateTokens(user.id!);
-
+       console.log(user.id,"user iddid ");
+       
         // Return response
         return {
             user: {
@@ -50,7 +51,10 @@ export class LoginUserUseCase {
                 createdAt: user.createdAt!,
                 isBlocked: user.isBlocked 
             },
-            tokens
+            tokens: {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken
+            }
         };
     }
 }

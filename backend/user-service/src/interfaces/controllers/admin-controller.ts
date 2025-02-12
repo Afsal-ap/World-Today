@@ -5,6 +5,9 @@ import { AdminLoginUseCase } from '../../application/use-cases/admin/admin-login
 import { CreateCategoryUseCase } from '../../application/use-cases/admin/category-usecase';
 import { ICategoryRepository } from '../../domain/repositories/category-repository';
 import { UpdateUserBlockStatusUseCase } from '../../application/use-cases/admin/updateUserBlockStatus';
+import { IUserRepository } from '../../domain/repositories/user-repository';
+import { UpdateCategoryUseCase } from '../../application/use-cases/admin/category-usecase';
+import { DeleteCategoryUseCase } from '../../application/use-cases/admin/category-usecase';
 
 export class AdminController {
     constructor(
@@ -13,7 +16,10 @@ export class AdminController {
         private readonly adminLoginUseCase: AdminLoginUseCase,
         private readonly createCategoryUseCase: CreateCategoryUseCase,
         private readonly categoryRepository: ICategoryRepository,
-        private readonly updateUserBlockStatusUseCase: UpdateUserBlockStatusUseCase
+        private readonly updateUserBlockStatusUseCase: UpdateUserBlockStatusUseCase,
+        private readonly userRepository: IUserRepository,
+        private readonly updateCategoryUseCase: UpdateCategoryUseCase,
+        private readonly deleteCategoryUseCase: DeleteCategoryUseCase
     ) {}
 
     async getAllUsers(req: Request, res: Response): Promise<void> {
@@ -71,6 +77,7 @@ export class AdminController {
     async getCategories(req: Request, res: Response): Promise<void> {
         try {
             const categories = await this.categoryRepository.findAll();
+           
             res.status(200).json(categories);
         } catch (error: any) {
             res.status(500).json({ message: error.message });
@@ -80,7 +87,7 @@ export class AdminController {
     async deleteCategory(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
-            await this.categoryRepository.delete(id);
+            await this.deleteCategoryUseCase.execute(id);
             res.status(200).json({ message: 'Category deleted successfully' });
         } catch (error: any) {
             res.status(500).json({ message: error.message });
@@ -101,6 +108,16 @@ export class AdminController {
                 status: 'error',
                 message: error.message 
             });
+        }
+    }
+
+    async updateCategory(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+            const category = await this.updateCategoryUseCase.execute(id, req.body);
+            res.status(200).json(category);
+        } catch (error: any) {
+            res.status(400).json({ message: error.message });
         }
     }
 }    

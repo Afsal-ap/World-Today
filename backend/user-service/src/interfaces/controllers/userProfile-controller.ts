@@ -12,24 +12,23 @@ export class ProfileController {
 
   async getProfile(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.user?.id;
-      
+      const userId = (req as any).user?.userId;
+      console.log(req.user,"req.user")
       if (!userId) {
-        res.status(401).json({
-          status: 'error',
-          message: 'Unauthorized - No user ID'
-        });
+        res.status(401).json({ status: 'error', message: 'Unauthorized - No user ID' });
         return;
       }
+  
+      
 
       const profile = await this.getUserProfileUseCase.execute(userId);
-      res.status(200).json({
+       res.status(200).json({
         status: 'success',
         data: profile
       });
     } catch (error: any) {
       console.error('Profile fetch error:', error);
-      res.status(500).json({ 
+       res.status(500).json({ 
         status: 'error',
         message: error.message || 'Failed to fetch profile' 
       });

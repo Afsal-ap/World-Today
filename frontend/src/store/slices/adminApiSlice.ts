@@ -7,8 +7,9 @@ export const adminApiSlice = createApi({
     credentials: 'include',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('adminToken');
+      console.log('Tokennney', token)
       if (token) {
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
       return headers;
     },
@@ -68,6 +69,16 @@ export const adminApiSlice = createApi({
     }),
     getCategories: builder.query({
       query: () => '/admin/categories',
+      transformResponse: (response: any) => {
+        console.log('Raw categories response:', response);
+        if (response?.status === 'success' && response?.data) {
+          return response.data;
+        }
+        if (Array.isArray(response)) {
+          return response;
+        }
+        throw new Error(response?.message || 'Failed to fetch categories');
+      },
       providesTags: ['Category'],
     }),
     createCategory: builder.mutation({
@@ -85,6 +96,16 @@ export const adminApiSlice = createApi({
       }),
       invalidatesTags: ['Category'],
     }),
+    updateCategory: builder.mutation 
+        ({
+        query: ({ id, ...body }) => ({
+            url: `/admin/categories/${id}`,
+            method: 'PUT',
+            body
+        }),
+        invalidatesTags: ['Category'],
+    })
+    
   }),
 });
 
@@ -97,4 +118,5 @@ export const {
   useGetCategoriesQuery,
   useCreateCategoryMutation,
   useDeleteCategoryMutation,
+  useUpdateCategoryMutation,
 } = adminApiSlice; 

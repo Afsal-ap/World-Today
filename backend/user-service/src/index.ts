@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';     
 import morgan from 'morgan';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 dotenv.config();  
 import { connectDatabase } from './infrastructure/db/mongoose-connection';
 import { UserRepositoryImpl } from './infrastructure/repositories/user-repository-impl';
@@ -22,7 +23,7 @@ import { UpdateUserStatusUseCase } from './application/use-cases/admin/update-us
 import { AdminLoginUseCase } from './application/use-cases/admin/admin-login';
 import { CategoryRepositoryImpl } from './infrastructure/repositories/category-repository-impl';
 import { CreateCategoryUseCase } from './application/use-cases/admin/category-usecase';
-import categoryRoutes from './interfaces/routes/category-routes';
+// import categoryRoutes from './interfaces/routes/category-routes';
 import { log } from 'console';
 import { GetUserProfileUseCase } from './application/use-cases/getUserProfile';
 import { ProfileController } from './interfaces/controllers/userProfile-controller';
@@ -34,10 +35,15 @@ import { UserController } from './interfaces/controllers/user-controller';
 import { setupUserRoutes } from './interfaces/routes/user-routes';
 import { UpdateUserBlockStatusUseCase } from './application/use-cases/admin/updateUserBlockStatus';
 import { SmsService } from './infrastructure/services/sms-service';
+import { authMiddleware } from './interfaces/middlewares/auth-middleware';
+import { RabbitMQService } from './infrastructure/services/rabbitMqService';
+import { UpdateCategoryUseCase } from './application/use-cases/admin/category-usecase'; 
+import { DeleteCategoryUseCase } from './application/use-cases/admin/category-usecase';
 
 const app = express();
 
 // Middleware
+app.use(cookieParser());
 app.use(cors({ 
   origin: 'http://localhost:5173', 
   credentials: true 
@@ -68,6 +74,8 @@ const getUserProfileUseCase = new GetUserProfileUseCase(userRepository);
 const profileController = new ProfileController(getUserProfileUseCase, userRepository, updateUserProfileUseCase);
 const toggleSavePostUseCase = new ToggleSavePostUseCase(savedPostRepository);
 const updateUserBlockStatusUseCase = new UpdateUserBlockStatusUseCase(userRepository);
+const updateCategoryUseCase = new UpdateCategoryUseCase(categoryRepository);
+const deleteCategoryUseCase = new DeleteCategoryUseCase(categoryRepository);
 // Initialize controllers
 const authController = new AuthController(  
     registerUseCase, 
@@ -85,23 +93,35 @@ const otpController = new OTPController(
     verifyOtpUseCase
 );
 
-const adminController = new AdminController(getAllUsersUseCase, updateUserStatusUseCase, adminLoginUseCase, createCategoryUseCase, categoryRepository, updateUserBlockStatusUseCase);
+const adminController = new AdminController(
+  getAllUsersUseCase,
+  updateUserStatusUseCase,
+  adminLoginUseCase,
+  createCategoryUseCase,
+  categoryRepository,
+  updateUserBlockStatusUseCase,
+  userRepository,
+  updateCategoryUseCase,
+  deleteCategoryUseCase
+);
 
 const PORT = process.env.PORT || 3001;
 
 async function startServer() {
     try {
         await connectDatabase();
+        await RabbitMQService.connect();
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);  
         });  
     } catch (error) {
         console.error('Failed to start server:', error);
         process.exit(1);
-    }
+    }        
 }      
 
-startServer();
+
+ startServer();
 
 // Routes 
 app.post('/auth/register', (req, res) => authController.register(req, res));  
@@ -109,16 +129,15 @@ app.post('/auth/login', (req, res) => authController.login(req, res));
 app.post('/auth/refresh-token', (req, res) => authController.refreshToken(req, res));  
 app.post('/auth/send-otp', (req, res) => otpController.sendOtp(req, res)); 
 app.post('/auth/verify-otp', (req, res) => otpController.verifyOtp(req, res));  
-app.use('/api/admin', setupAdminRoutes(adminController));  
-app.use('/api/categories', categoryRoutes);
+app.use('/api/admin', setupAdminRoutes(adminController,userRepository));  
+// app.use('/api/categories', categoryRoutes);
 app.use('/api/users', profileRoutes); 
 app.use('/api/users', setupUserRoutes(userController, savedPostRepository));
+app.get('/api/users/profile', authMiddleware, profileRoutes);
+app.post('/api/users/profile', authMiddleware, profileRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
-  res.status(500).json({
-    status: 'error',
-    message: 'Something went wrong!'
-  });
+  res.status(500).json({ message: 'Something went wrong!' });
 });

@@ -113,7 +113,7 @@ const ArticlesList = () => {
                 {post.media && (
                   <div className="md:w-1/3 h-48 md:h-auto relative">
                     <img
-                      src={`http://localhost:3004/uploads/${post.media}`}
+                      src={`http://localhost:3004${post.media}`}
                       alt={post.title}
                       className="w-full h-full object-cover"
                     />

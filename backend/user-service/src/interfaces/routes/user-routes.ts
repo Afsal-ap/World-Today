@@ -1,27 +1,28 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import { UserController } from '../controllers/user-controller';
 import { authMiddleware } from '../middlewares/auth-middleware';
 import { ISavedPostRepository } from '../../domain/repositories/savePost-repository';
 import { getPostsByIds } from '../../infrastructure/grpc/grpcClient';
 import { log } from 'console';
+import { AuthenticatedRequest } from '../middlewares/auth-middleware';
 
 export const setupUserRoutes = (userController: UserController, savedPostRepository: ISavedPostRepository) => {
   const router = Router();          
 
-  router.post('/posts/save', authMiddleware, (req, res) => 
+  router.post('/posts/save', authMiddleware, (req: AuthenticatedRequest, res: Response) => 
     userController.toggleSavePost(req, res)
   );
 
-  router.delete('/posts/save', authMiddleware, (req, res) => 
+  router.delete('/posts/save', authMiddleware, (req: AuthenticatedRequest, res: Response) => 
     userController.toggleSavePost(req, res)
   );
 
-  router.get('/posts/saved', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  router.get('/posts/saved', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        res.status(401).json({ message: 'Unauthorized' });
-        return;
+         res.status(401).json({ message: 'Unauthorized' });
+         return;
       }
       
       const savedPostIds = await savedPostRepository.getSavedPosts(userId);

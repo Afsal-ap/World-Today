@@ -5,10 +5,18 @@ import { NewspaperIcon } from '@heroicons/react/24/outline';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
+interface LoginResponse {
+    success: boolean;
+    tokens: {
+        accessToken: string;
+        refreshToken: string;
+    };     
+   
+}
 
 const Login = () => {
     const navigate = useNavigate();
-    const [login, { isLoading }] = useLoginMutation();
+    const [login, { isLoading}] = useLoginMutation();
 
     useEffect(() => {
         const userToken = localStorage.getItem('userToken');
@@ -41,10 +49,12 @@ const Login = () => {
                 
                 if (result.success) {
                     localStorage.setItem('userToken', result.tokens.accessToken);
-                    navigate('/');
+                    localStorage.setItem('refreshToken', result.tokens.refreshToken);
+                    setTimeout(() => navigate('/'), 100);
                 }
             } catch (err: any) {
-                formik.setStatus(err?.data?.message || err?.message || 'Login failed');
+                console.error('Login error:', err);
+                formik.setStatus(err.data?.error || err.data?.message || err.message || 'Login failed');
             }
         },
     });

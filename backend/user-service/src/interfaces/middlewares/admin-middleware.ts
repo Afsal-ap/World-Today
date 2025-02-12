@@ -22,8 +22,9 @@ export const adminMiddleware = (userRepository: IUserRepository, authService: Au
                 throw new Error('User ID is required');
             }
             req.user = user;
+
             next();
-        } catch (error) {
+        } catch (error) {   
             res.status(401).json({ message: 'Invalid token' });
         }
     };

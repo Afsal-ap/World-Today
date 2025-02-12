@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import { userInfo } from 'os';
 
 dotenv.config();
 
@@ -14,7 +15,9 @@ export interface IAuthService {
     generateTokens(user: any): Promise<AuthTokens>;
 }
 
-export interface AuthTokens {
+export interface AuthTokens { 
+   
+    email: string;
     accessToken: string;
     refreshToken: string;
 }
@@ -25,7 +28,7 @@ export class AuthService implements IAuthService {
     private readonly REFRESH_TOKEN_SECRET: string;
     private readonly ACCESS_TOKEN_EXPIRY = '15m';  // 15 minutes
     private readonly REFRESH_TOKEN_EXPIRY = '7d';  // 7 days
-
+  
     constructor() {
         // Initialize secrets in constructor
         const accessSecret = process.env.JWT_SECRET;
@@ -35,7 +38,7 @@ export class AuthService implements IAuthService {
             throw new Error('JWT secrets not configured properly');
         }
 
-        this.ACCESS_TOKEN_SECRET = accessSecret;
+        this.ACCESS_TOKEN_SECRET = accessSecret;   
         this.REFRESH_TOKEN_SECRET = refreshSecret;
         
         console.log('Auth service initialized with secrets');
@@ -60,14 +63,10 @@ export class AuthService implements IAuthService {
     }
 
     async generateTokens(user: any): Promise<AuthTokens> {
-        if (!this.ACCESS_TOKEN_SECRET) {
-            throw new Error('JWT secrets not configured');
-        }
-
-        // Handle both user object and userId string
-        const userId = typeof user === 'string' ? user : user._id;
-        const email = typeof user === 'string' ? undefined : user.email;
-
+        console.log(user,"userr");
+        const userId = user;
+        const email = user.email;
+         
         const accessToken = jwt.sign(
             { userId, email },
             this.ACCESS_TOKEN_SECRET,
@@ -79,8 +78,12 @@ export class AuthService implements IAuthService {
             this.REFRESH_TOKEN_SECRET,
             { expiresIn: this.REFRESH_TOKEN_EXPIRY }
         );
-
-        return { accessToken, refreshToken };
+        
+        return { 
+            accessToken, 
+            refreshToken,      
+            email 
+        };
     }
 
     async verifyAccessToken(token: string): Promise<any> {
@@ -107,15 +110,22 @@ export class AuthService implements IAuthService {
 
     async generateAccessTokenFromRefreshToken(refreshToken: string): Promise<string> {
         try {
-            const decoded = await this.verifyRefreshToken(refreshToken);
+            const decoded = await this.verifyRefreshToken(refreshToken) as { userId: string };
+            if (!decoded) {
+                throw new Error('Invalid refresh token');
+            }
+
+            // Generate new access token
             const accessToken = jwt.sign(
                 { userId: decoded.userId },
                 this.ACCESS_TOKEN_SECRET,
                 { expiresIn: this.ACCESS_TOKEN_EXPIRY }
             );
+
             return accessToken;
         } catch (error) {
-            throw new Error('Invalid refresh token');
+            console.error('Token refresh error:', error);
+            throw new Error('Failed to generate new access token');
         }
     }
 

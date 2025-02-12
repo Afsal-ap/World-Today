@@ -116,9 +116,12 @@ export const postApiSlice = createApi({
     deleteComment: builder.mutation({
       query: ({ postId, commentId }) => ({
         url: `/api/posts/${postId}/comments/${commentId}`,
-        method: 'DELETE',
+        method: 'DELETE'
       }),
-      invalidatesTags: ['Post']
+      invalidatesTags: (_result, _error, { postId }) => [
+        { type: 'Post', id: postId },
+        'Comments'
+      ]
     }),
     getPost: builder.query({
       query: (id) => `/api/posts/${id}`,
@@ -227,6 +230,17 @@ export const postApiSlice = createApi({
         'Channel'
       ]
     }),
+    updateComment: builder.mutation({
+      query: ({ postId, commentId, content }) => ({
+        url: `/api/posts/${postId}/comments/${commentId}`,
+        method: 'PUT',
+        body: { content }
+      }),
+      invalidatesTags: (_result, _error, { postId }) => [
+        { type: 'Post', id: postId },
+        'Comments'
+      ]
+    }),
   }),
 });
 
@@ -250,5 +264,6 @@ export const {
   useUpdateChannelProfileMutation,
   useGetChannelPostsQuery,
   useGetAllChannelsQuery,
-  useToggleChannelBlockMutation
+  useToggleChannelBlockMutation,
+  useUpdateCommentMutation
 } = postApiSlice;

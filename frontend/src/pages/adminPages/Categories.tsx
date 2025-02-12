@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGetCategoriesQuery, useCreateCategoryMutation, useDeleteCategoryMutation } from '../../store/slices/adminApiSlice';
+import { useGetCategoriesQuery, useCreateCategoryMutation, useDeleteCategoryMutation, useUpdateCategoryMutation } from '../../store/slices/adminApiSlice';
 import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface DeleteModalProps {
@@ -14,6 +14,12 @@ interface Category {
   name: string;
   description: string;
   createdAt: string;
+}
+
+// Add this interface for validation errors during editing
+interface EditValidationErrors {
+    name?: string;
+    description?: string;
 }
 
 const DeleteModal = ({ isOpen, onClose, onConfirm, categoryName }: DeleteModalProps) => {
@@ -61,22 +67,35 @@ const Categories = () => {
     const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
     const [page, setPage] = useState(1);
     const [limit] = useState(10);
+    const [editValidationErrors, setEditValidationErrors] = useState<EditValidationErrors>({});
     
-    const { data: categories, isLoading } = useGetCategoriesQuery({ page, limit });
+    const { data: categories, isLoading, error: fetchError } = useGetCategoriesQuery({});
+    console.log('Categories in component:', categories);
+    console.log('Fetch error:', fetchError);
+     
+    if (fetchError) {
+        console.error('Fetch error details:', fetchError);
+    }
+
+    const categoriesList = Array.isArray(categories) ? categories : [];
     const [createCategory] = useCreateCategoryMutation();
     const [deleteCategory] = useDeleteCategoryMutation();
+    const [updateCategory] = useUpdateCategoryMutation();
+    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
     const validateForm = () => {
         const errors: { name?: string; description?: string } = {};
         
         if (!name.trim()) {
             errors.name = 'Category name is required';
-        } else if (name.length < 3) {
+        } else if (!description.trim()) { 
+            errors.description = 'Description is required';
+        }else if (name.length < 3) {
             errors.name = 'Category name must be at least 3 characters';
         } else if (name.length > 50) {
             errors.name = 'Category name must be less than 50 characters';
-        } else if (categories) {
-            const isDuplicate = categories.some(
+        } else if (categoriesList) {
+            const isDuplicate = categoriesList.some(
                 (category: Category) => 
                     category.name.toLowerCase() === name.trim().toLowerCase()
             );
@@ -105,7 +124,7 @@ const Categories = () => {
             const trimmedName = name.trim();
             const trimmedDescription = description.trim();
             
-            const isDuplicate = categories?.some(
+            const isDuplicate = categoriesList?.some(
                 (category: Category) => 
                     category.name.toLowerCase() === trimmedName.toLowerCase()
             );
@@ -146,6 +165,64 @@ const Categories = () => {
             setError('Failed to delete category');
             console.error('Failed to delete category:', err);
         }
+    };
+
+    // Add this validation function for editing
+    const validateEditForm = (category: Category) => {
+        const errors: EditValidationErrors = {};
+        
+        if (!category.name.trim()) {
+            errors.name = 'Category name is required';
+        }else if (category.name.length < 3) {
+            errors.name = 'Category name must be at least 3 characters';
+        } else if (category.name.length > 50) {
+            errors.name = 'Category name must be less than 50 characters';
+        } else {
+            // Check for duplicate names, excluding the current category
+            const isDuplicate = categoriesList.some(
+                (cat: Category) => 
+                    cat.id !== category.id && 
+                    cat.name.toLowerCase() === category.name.trim().toLowerCase()
+            );
+            if (isDuplicate) {
+                errors.name = 'Category with this name already exists';
+            }
+        }
+
+        if (category.description && category.description.length > 200) {
+            errors.description = 'Description must be less than 200 characters';
+        }
+
+        setEditValidationErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    // Update the handleUpdateCategory function
+    const handleUpdateCategory = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingCategory) return;
+
+        if (!validateEditForm(editingCategory)) {
+            return;
+        }
+
+        try {
+            await updateCategory({
+                id: editingCategory.id,
+                name: editingCategory.name.trim(),
+                description: editingCategory.description.trim()
+            }).unwrap();
+            setEditingCategory(null);
+            setEditValidationErrors({});
+        } catch (err) {
+            setError('Failed to update category');
+        }
+    };
+
+    // Update the handleEditClick function
+    const handleEditClick = (category: Category) => {
+        setEditingCategory(category);
+        setEditValidationErrors({});  // Clear any previous validation errors
     };
 
     if (isLoading) return <div>Loading...</div>;
@@ -239,21 +316,106 @@ const Categories = () => {
                             <tr>
                                 <td colSpan={4} className="px-6 py-4 text-center">Loading...</td>
                             </tr>
-                        ) : categories && categories.length > 0 ? (
-                            categories.map((category: Category) => (
+                        ) : categoriesList && categoriesList.length > 0 ? (
+                            categoriesList.map((category: Category) => (
                                 <tr key={category.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap">{category.name}</td>
-                                    <td className="px-6 py-4">{category.description}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {editingCategory?.id === category.id ? (
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    value={editingCategory.name}
+                                                    onChange={(e) => {
+                                                        setEditingCategory({
+                                                            ...editingCategory,
+                                                            name: e.target.value
+                                                        });
+                                                        if (editValidationErrors.name) {
+                                                            setEditValidationErrors({
+                                                                ...editValidationErrors,
+                                                                name: undefined
+                                                            });
+                                                        }
+                                                    }}
+                                                    className={`border rounded p-1 w-full ${
+                                                        editValidationErrors.name ? 'border-red-300' : 'border-gray-300'
+                                                    }`}
+                                                />
+                                                {editValidationErrors.name && (
+                                                    <p className="text-sm text-red-600 mt-1">{editValidationErrors.name}</p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            category.name
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {editingCategory?.id === category.id ? (
+                                            <div>
+                                                <textarea
+                                                    value={editingCategory.description}
+                                                    onChange={(e) => {
+                                                        setEditingCategory({
+                                                            ...editingCategory,
+                                                            description: e.target.value
+                                                        });
+                                                        if (editValidationErrors.description) {
+                                                            setEditValidationErrors({
+                                                                ...editValidationErrors,
+                                                                description: undefined
+                                                            });
+                                                        }
+                                                    }}
+                                                    className={`border rounded p-1 w-full ${
+                                                        editValidationErrors.description ? 'border-red-300' : 'border-gray-300'
+                                                    }`}
+                                                />
+                                                {editValidationErrors.description && (
+                                                    <p className="text-sm text-red-600 mt-1">{editValidationErrors.description}</p>
+                                                )}
+                                                <p className="text-sm text-gray-500 mt-1">
+                                                    {editingCategory.description.length}/200 characters
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            category.description
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {new Date(category.createdAt).toLocaleDateString()}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <button
-                                            onClick={() => handleDeleteClick(category.id, category.name)}
-                                            className="text-red-600 hover:text-red-900"
-                                        >
-                                            <TrashIcon className="h-5 w-5" />
-                                        </button>
+                                    <td className="px-6 py-4 whitespace-nowrap flex gap-2">
+                                        {editingCategory?.id === category.id ? (
+                                            <>
+                                                <button
+                                                    onClick={handleUpdateCategory}
+                                                    className="text-green-600 hover:text-green-900"
+                                                >
+                                                    Save
+                                                </button>
+                                                <button
+                                                    onClick={() => setEditingCategory(null)}
+                                                    className="text-gray-600 hover:text-gray-900"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    onClick={() => handleEditClick(category)}
+                                                    className="text-blue-600 hover:text-blue-900"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteClick(category.id, category.name)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                >
+                                                    <TrashIcon className="h-5 w-5" />
+                                                </button>
+                                            </>
+                                        )}
                                     </td>
                                 </tr>
                             ))
@@ -266,7 +428,7 @@ const Categories = () => {
                 </table>
 
                 {/* Pagination */}
-                {categories && categories.length > 0 && (
+                {categoriesList && categoriesList.length > 0 && (
                     <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200">
                         <button
                             onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -278,7 +440,7 @@ const Categories = () => {
                         <span>Page {page}</span>
                         <button
                             onClick={() => setPage(p => p + 1)}
-                            disabled={!categories.length || categories.length < limit}
+                            disabled={!categoriesList.length || categoriesList.length < limit}
                             className="px-3 py-1 border rounded text-sm disabled:opacity-50"
                         >
                             Next

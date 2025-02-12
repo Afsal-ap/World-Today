@@ -9,9 +9,11 @@ export class RegisterUserUseCase {
         private readonly userRepository: IUserRepository
     ) {}
 
-    async execute(userData: RegisterUserDto): Promise<{ email: string, hashedPassword: string, name: string, phone: string }> {
+    async execute(userData: RegisterUserDto): Promise<{ email: string, name: string, phone: string }> {
         console.log('🔐 Hashing password for:', userData.email);
         
+    
+
         // Hash password
         const hashedPassword = await this.authService.hashPassword(userData.password);
         console.log('Password hashed successfully');
@@ -23,14 +25,12 @@ export class RegisterUserUseCase {
             name: userData.name,
             phone: userData.phone
         });
-
-        // Save user to database
-        await this.userRepository.create(user);
-        console.log('✅ User saved to database:', userData.email);
+    
+        
+        
 
         return {
             email: userData.email,
-            hashedPassword,
             name: userData.name,
             phone: userData.phone
         };

@@ -51,6 +51,7 @@ export class UserRepositoryImpl implements IUserRepository {
             password: user.password,
             name: user.name,
             phone: user.phone,
+            isAdmin: user.isAdmin,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt
         });

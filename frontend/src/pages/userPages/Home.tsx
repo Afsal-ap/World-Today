@@ -57,7 +57,7 @@ const Home = () => {
   console.log('Retrieved token from localStorage:', channelToken);
 
   useEffect(() => {
-    if (!userToken) {
+    if (!userToken) { 
       console.log('No token found, redirecting to login');
       navigate('/login');
     }

@@ -27,7 +27,7 @@ router.post('/:postId/comments', authMiddleware.verifyToken.bind(authMiddleware)
 // Get comments for a post
 router.get('/:postId/comments', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { postId } = req.params;
+    const { postId } = req.params; 
     const comments = await CommentModel.find({ postId })
       .sort({ createdAt: -1 })
       .limit(50);
@@ -40,14 +40,14 @@ router.get('/:postId/comments', authMiddleware.verifyToken.bind(authMiddleware),
 });
 
 // Update a comment
-router.put('/comments/:commentId', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.put('/:postId/comments/:commentId', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { commentId } = req.params;
+    const { commentId } = req.params; 
+   
     const { content } = req.body;
-    const userId = (req as any).user.channelId;
-
+    
     const comment = await CommentModel.findOneAndUpdate(
-      { _id: commentId, userId },
+      { _id: commentId },
       { content, updatedAt: new Date() },
       { new: true }
     );
@@ -64,12 +64,12 @@ router.put('/comments/:commentId', authMiddleware.verifyToken.bind(authMiddlewar
 });
 
 // Delete a comment
-router.delete('/comments/:commentId', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.delete('/:postId/comments/:commentId', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { commentId } = req.params;
     const userId = (req as any).user.channelId;
 
-    const comment = await CommentModel.findOneAndDelete({ _id: commentId, userId });
+    const comment = await CommentModel.findOneAndDelete({ _id: commentId });
 
     if (!comment) {
       res.status(404).json({ message: 'Comment not found or unauthorized' });

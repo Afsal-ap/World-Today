@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useGetPostQuery, useCreateCommentMutation, useGetPostCommentsQuery } from '../store/slices/postApiSlice';
+import { useGetPostQuery, useCreateCommentMutation, useGetPostCommentsQuery, useDeleteCommentMutation, useUpdateCommentMutation } from '../store/slices/postApiSlice';
+import { FiEdit, FiTrash } from 'react-icons/fi';
 
-interface Post {
+interface post {
   id: string;
   title: string;
   content: string;
@@ -17,7 +18,7 @@ interface Post {
 }
 
 interface Comment {
-  id: string;
+  _id: string;
   content: string;
   userId: string;
   createdAt: string;
@@ -35,6 +36,10 @@ function DetailedPost() {
   const userToken = localStorage.getItem('userToken');
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post?.likes || 0);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editedComment, setEditedComment] = useState('');
+  const [deleteComment] = useDeleteCommentMutation();
+  const [updateComment] = useUpdateCommentMutation();
 
   useEffect(() => {
     if (error) {
@@ -55,7 +60,7 @@ function DetailedPost() {
       return null;
     }
   };
-
+ console.log(comments,"commentukalee")
   const handleSubmitComment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!comment.trim()) return;
@@ -128,6 +133,39 @@ function DetailedPost() {
     }
   }, [post]);
 
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await deleteComment({ postId: postId!, commentId }).unwrap();
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+    }
+  };
+
+  const handleEditComment = async (commentId: string, currentContent: string) => {
+    setEditingCommentId(commentId);
+    setEditedComment(currentContent);
+  };
+
+  const handleSaveEdit = async (commentId: string) => { 
+    console.log(commentId,"comment id ")
+    try {
+      await updateComment({
+        postId: postId!,
+        commentId,
+        content: editedComment
+      }).unwrap();
+      setEditingCommentId(null);
+      setEditedComment('');
+    } catch (error) {
+      console.error('Failed to update comment:', error);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditedComment('');
+  };
+
   if (isLoading) return <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div></div>;
   if (error) {
     console.error('Detailed error:', error);
@@ -153,9 +191,9 @@ function DetailedPost() {
         {/* Main post content */}
         <div className="flex-grow max-w-4xl">
           <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-            {post.mediaUrl && post.mediaType === 'image' && (
+            {post.media && post.mediaType === 'image' && (
               <img 
-                src={`http://localhost:3004${post.mediaUrl}`}
+                src={`http://localhost:3004${post.media}`}
                 alt={post.title}
                 className="w-full h-64 object-cover"
                 onError={(e) => {
@@ -170,7 +208,7 @@ function DetailedPost() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-purple-600">{post.category}</span>
-                <span className="text-gray-600">By {post.channelName}</span>
+                <span className="text-gray-600">By {post.channel.channelName}</span>
               </div>
               <h1 className="text-3xl font-bold mb-4">{post.title}</h1>
               <p className="text-gray-700 mb-4 whitespace-pre-wrap">{post.content}</p>
@@ -199,7 +237,7 @@ function DetailedPost() {
                       d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
                     />
                   </svg>
-                  {likesCount} Likes
+                  {post.likesCount} Likes
                 </button>
                 <span className="text-gray-500 text-sm">
                   {new Date(post.createdAt).toLocaleDateString()}
@@ -239,14 +277,59 @@ function DetailedPost() {
           <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
             {comments && comments.length > 0 ? (
               comments.map((comment: Comment) => (
-                <div key={comment.id} className="p-4 border-b hover:bg-gray-50">
+                <div key={comment._id} className="p-4 border-b hover:bg-gray-50">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-semibold">{comment.userName}</span>
-                    <span className="text-sm text-gray-500">
-                      {new Date(comment.createdAt).toLocaleDateString()}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {editingCommentId === comment._id ? (
+                        <>
+                          <button
+                            onClick={() => handleSaveEdit(comment._id)}
+                            className="text-sm text-green-600 hover:text-green-700"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="text-sm text-red-600 hover:text-red-700"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {comment.userId === decodeToken(userToken!)?.userId && (
+                            <>
+                              <button
+                                onClick={() => handleEditComment(comment._id, comment.content)}
+                                className="text-gray-500 hover:text-gray-700"
+                              >
+                                <FiEdit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteComment(comment._id)}
+                                className="text-gray-500 hover:text-gray-700"
+                              >
+                                <FiTrash className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </>
+                      )}
+                      <span className="text-sm text-gray-500">
+                        {new Date(comment.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-gray-700">{comment.content}</p>
+                  {editingCommentId === comment._id ? (
+                    <textarea
+                      value={editedComment}
+                      onChange={(e) => setEditedComment(e.target.value)}
+                      className="w-full p-2 border rounded"
+                    />
+                  ) : (
+                    <p className="text-gray-700">{comment.content}</p>
+                  )}
                 </div>
               ))
             ) : (

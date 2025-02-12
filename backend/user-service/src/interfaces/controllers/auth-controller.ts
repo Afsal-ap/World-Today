@@ -15,7 +15,7 @@ export class AuthController {
         private readonly verifyOtpUseCase: VerifyOtpUseCase,
         private readonly completeRegistrationUseCase: CompleteRegistrationUseCase
     ) {}
-
+    
     async register(req: Request, res: Response): Promise<void> {
         try {
             const { phone, email, password, name } = req.body;
@@ -67,7 +67,6 @@ export class AuthController {
         try {
             const result = await this.loginUseCase.execute(req.body);
             
-            // Check if user is blocked
             if (result.user.isBlocked) {
                 res.status(403).json({ 
                     success: false, 
@@ -76,7 +75,22 @@ export class AuthController {
                 return;
             }
             
-            res.status(200).json(result);
+            // Set refresh token in cookie
+            res.cookie('refreshToken', result.tokens.refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+
+            res.status(200).json({
+                success: true,
+                user: result.user,
+                tokens: {
+                    accessToken: result.tokens.accessToken,
+                    refreshToken: result.tokens.refreshToken
+                }
+            });
         } catch (error: any) {
             res.status(401).json({ error: error.message });
         }
@@ -84,18 +98,11 @@ export class AuthController {
 
     async refreshToken(req: Request, res: Response): Promise<void> {
         try {
-            const { refreshToken } = req.body;
+            const refreshToken = req.cookies?.refreshToken;
             if (!refreshToken) {
                 throw new Error('Refresh token is required');
             }
 
-            // Verify the refresh token
-            const decoded = this.authService.verifyRefreshToken(refreshToken);
-            if (!decoded) {
-                throw new Error('Invalid refresh token');
-            }
-
-            // Generate new access token
             const newAccessToken = await this.authService.generateAccessTokenFromRefreshToken(refreshToken);
             
             res.status(200).json({ 

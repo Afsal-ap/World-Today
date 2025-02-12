@@ -11,6 +11,8 @@ import { Request, Response, NextFunction } from 'express';
 import commentRoutes from './interfaces/routes/CommentRoutes';
 import { startGrpcServer } from './infrastructure/grpc/grpcServer';
 import adminRoutes from './interfaces/routes/adminRoutes';
+import { CategoryListener } from './infrastructure/services/categoryListener';
+import { RabbitMQService } from './infrastructure/services/rabbitMQService';
 
 const app = express();
       
@@ -89,6 +91,21 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     message: err.message || 'Internal server error',
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
+});
+
+// Start the category listener
+CategoryListener.startListening()
+  .then(() => {
+    console.log('Category listener started successfully');
+  })
+  .catch((error) => {
+    console.error('Failed to start category listener:', error);
+  });
+
+// Add graceful shutdown
+process.on('SIGINT', async () => {
+  await RabbitMQService.closeConnection();
+  process.exit(0);
 });
 
 const PORT = process.env.PORT || 3004;

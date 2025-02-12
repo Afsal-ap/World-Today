@@ -4,12 +4,19 @@ import { useGetProfileQuery, useUpdateProfileMutation } from '../../store/slices
 import { FiEdit2, FiUser, FiMail, FiPhone, FiCalendar, FiSave, FiX, FiLogOut } from 'react-icons/fi';
 import SavedPosts from '../../components/SavedPosts';
 
-interface UserProfile {
+interface UserProfile{
   id: string;
   name: string;
   email: string;
   phone: string;
-  createdAt: Date;
+  createdAt: string;
+} 
+
+interface User{
+  phone: string;
+  email: string;
+  name: string;
+  createdAt: string;
 }
 
 const UserProfile = () => {
@@ -23,20 +30,33 @@ const UserProfile = () => {
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     console.log('Current token in localStorage:', token);
-  }, []);
+    
+    if (!token) {
+      console.log('No token found - redirecting to login');
+      navigate('/login');
+    }
+  }, [navigate]);
 
-  const { data: profile, error, isLoading } = useGetProfileQuery(undefined);
+  const { data: profile, error, isLoading } = useGetProfileQuery() as { data?: User; error?: any; isLoading: boolean };
   const [updateProfile] = useUpdateProfileMutation();
 
   useEffect(() => {
     console.log('Profile data:', profile);
     console.log('Profile error:', error);
     console.log('Is loading:', isLoading);
+    
     if ((error as any)?.status === 401) {
-     console.log('Unauthorized');
+      console.log('Unauthorized - redirecting to login');
+      navigate('/login');
+    } else if (error) {
+      console.error('Profile fetch error details:', {
+        status: (error as any)?.status,
+        data: (error as any)?.data,
+        message: (error as any)?.message
+      });
     }
-  }, [profile, error, isLoading]);
-
+  }, [profile, error, isLoading, navigate]);
+  
   const handleEdit = () => {
     setFormData({
       name: profile?.name || '',
@@ -59,9 +79,21 @@ const UserProfile = () => {
     setIsEditing(false);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('userToken');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      // Call backend logout endpoint to clear cookie
+      await fetch('/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear frontend storage
+      localStorage.removeItem('userToken');
+      // Redirect to login
+      navigate('/login');
+    }
   };
 
   if (isLoading) {
@@ -111,7 +143,7 @@ const UserProfile = () => {
             </div>
           </div>
 
-          {/* Profile Content */}
+          {/* Profile  */}
           <div className="p-8">
             {profile && !isEditing && (
               <div className="space-y-8">
@@ -128,9 +160,9 @@ const UserProfile = () => {
 
                 {/* Profile Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <ProfileField icon={<FiUser />} label="Name" value={profile.name} />
-                  <ProfileField icon={<FiMail />} label="Email" value={profile.email} />
-                  <ProfileField icon={<FiPhone />} label="Phone" value={profile.phone} />
+                  <ProfileField icon={<FiUser />} label="Name" value={profile.name || ''} />
+                  <ProfileField icon={<FiMail />} label="Email" value={profile.email || ''} />
+                  <ProfileField icon={<FiPhone />} label="Phone" value={profile.phone || 'N/A'} />
                   <ProfileField 
                     icon={<FiCalendar />} 
                     label="Member Since" 

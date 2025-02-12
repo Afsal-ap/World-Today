@@ -82,7 +82,7 @@ const Register = () => {
           ...values,
           phone: formattedPhone
         }).unwrap();
-        
+        console.log(result , "resulttt")
         if (result.success) {
           navigate('/verify-otp', { 
             state: { 
