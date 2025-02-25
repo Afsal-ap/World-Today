@@ -3,9 +3,9 @@ import { useGetAllChannelsQuery, useToggleChannelBlockMutation } from '../../sto
 import { format, isValid, parseISO } from 'date-fns';
 import { Button, Spinner } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
+import ChannelDetails from '../../components/adminComponents/ChannelDetails';
 
 interface Channel {
   id: string;
@@ -23,6 +23,7 @@ interface Channel {
 const ChannelsList = () => {
   const [page, setPage] = useState(1);
   const [loadingChannelId, setLoadingChannelId] = useState<string | null>(null);
+  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const { data: response, isLoading, error } = useGetAllChannelsQuery({ page, limit: 10 });
   const [toggleBlock] = useToggleChannelBlockMutation();
 
@@ -43,6 +44,10 @@ const ChannelsList = () => {
     } finally {
       setLoadingChannelId(null);
     }
+  };
+
+  const handleChannelClick = (channel: Channel) => {
+    setSelectedChannel(channel);
   };
 
   if (isLoading) {
@@ -83,7 +88,11 @@ const ChannelsList = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {channels.map((channel: Channel) => (
-              <tr key={channel.id} className={channel.isBlocked ? 'bg-red-50' : ''}>
+              <tr 
+                key={channel.id} 
+                className={`${channel.isBlocked ? 'bg-red-50' : ''} cursor-pointer hover:bg-gray-50`}
+                onClick={() => handleChannelClick(channel)}
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0">
@@ -120,7 +129,10 @@ const ChannelsList = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <Button 
-                    onClick={() => handleToggleBlock(channel.id, channel.isBlocked)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleBlock(channel.id, channel.isBlocked);
+                    }}
                     disabled={loadingChannelId === channel.id}
                     variant={channel.isBlocked ? "success" : "danger"}
                     style={{ minWidth: '140px' }}
@@ -143,7 +155,10 @@ const ChannelsList = () => {
         {totalPages > 1 && (
           <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200">
             <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={(e) => {
+                e.stopPropagation();
+                setPage(p => Math.max(1, p - 1));
+              }}
               disabled={page === 1}
               className="px-4 py-2 border rounded text-sm disabled:opacity-50 bg-white hover:bg-gray-50"
             >
@@ -153,7 +168,10 @@ const ChannelsList = () => {
               {[...Array(totalPages)].map((_, i) => (
                 <button
                   key={i + 1}
-                  onClick={() => setPage(i + 1)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPage(i + 1);
+                  }}
                   className={`px-3 py-1 rounded ${
                     page === i + 1
                       ? 'bg-purple-600 text-white'
@@ -165,7 +183,10 @@ const ChannelsList = () => {
               ))}
             </div>
             <button
-              onClick={() => setPage(p => p + 1)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setPage(p => p + 1);
+              }}
               disabled={page >= totalPages}
               className="px-4 py-2 border rounded text-sm disabled:opacity-50 bg-white hover:bg-gray-50"
             >
@@ -174,6 +195,14 @@ const ChannelsList = () => {
           </div>
         )}
       </div>
+
+      {/* Channel Details Modal */}
+      {selectedChannel && (
+        <ChannelDetails
+          channel={selectedChannel}
+          onClose={() => setSelectedChannel(null)}
+        />
+      )}
     </div>
   );
 };

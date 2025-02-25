@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { useUpdatePostMutation } from '../store/slices/postApiSlice';
+import { useUpdatePostMutation, useGetCategoriesQuery } from '../store/slices/postApiSlice';
+
+interface Category {
+  _id: string;
+  name: string;
+  description?: string;
+}
 
 interface Post {
   _id: string;
@@ -16,9 +22,11 @@ interface EditModalProps {
 const EditModal: React.FC<EditModalProps> = ({ post, onClose }) => {
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
-  const [category, setCategory] = useState(post.category);
+  const [category, setCategory] = useState(post.category || '');
   const [updatePost] = useUpdatePostMutation();
   const [error, setError] = useState<string | null>(null);
+
+  const { data: categories, isLoading, isError } = useGetCategoriesQuery({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,13 +42,29 @@ const EditModal: React.FC<EditModalProps> = ({ post, onClose }) => {
         postId: post._id,
         formData
       }).unwrap();
-      
+
       onClose();
     } catch (err) {
       console.error('Failed to update post:', err);
       setError('Failed to update post. Please try again.');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="bg-white p-4 rounded">Loading categories...</div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="bg-white p-4 rounded text-red-500">Error loading categories</div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -77,13 +101,19 @@ const EditModal: React.FC<EditModalProps> = ({ post, onClose }) => {
 
           <div className="mb-4">
             <label className="block text-gray-700 mb-2">Category</label>
-            <input
-              type="text"
+            <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full p-2 border rounded focus:ring-2 focus:ring-purple-500"
               required
-            />
+            >
+              <option value="">Select a category</option>
+              {categories?.map((cat: Category) => (
+                <option key={cat._id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex justify-end gap-4">

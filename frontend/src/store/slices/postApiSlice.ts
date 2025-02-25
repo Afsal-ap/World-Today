@@ -13,12 +13,32 @@ export const postApiSlice = createApi({
     },
     credentials: 'include',
   }),
-  tagTypes: ['Post', 'Channel', 'Comments'],
+  tagTypes: ['Post', 'Channel', 'Comments', 'LiveStream'],
   endpoints: (builder) => ({
     // Post endpoints
     getPosts: builder.query({
-      query: () => '/api/posts',
-      providesTags: ['Post']
+      query: ({ page = 1, limit = 10 }) => ({
+        url: '/api/posts',
+        params: { 
+          page, 
+          limit
+        }
+      }),
+      transformResponse: (response: any) => {
+        return response || [];
+      },
+      providesTags: ['Post'],
+      serializeQueryArgs: ({ endpointName }) => {
+        return endpointName;
+      },
+      merge: (currentCache, newItems) => {
+        if (newItems && newItems.length > 0) {
+          currentCache.push(...newItems);
+        }
+      },
+      forceRefetch({ currentArg, previousArg }) {
+        return currentArg !== previousArg;
+      },
     }),
     createPost: builder.mutation({
       query: ({ body }) => ({
@@ -208,17 +228,11 @@ export const postApiSlice = createApi({
       invalidatesTags: ['Channel']
     }),
     getChannelPosts: builder.query({
-      query: () => '/api/posts/channel/posts',
-      providesTags: (result) => 
-        result
-          ? [
-              ...result.data.map(({ _id }: { _id: string }) => ({ 
-                type: 'Post' as const, 
-                id: _id 
-              })),
-              'Post'
-            ]
-          : ['Post']
+      query: (channelId) => `/api/posts/channel/${channelId}/posts`,
+      transformResponse: (response: any) => {
+        return response?.data || [];
+      },
+      providesTags: ['Post']
     }),
     toggleChannelBlock: builder.mutation({
       query: (channelId) => ({
@@ -240,6 +254,60 @@ export const postApiSlice = createApi({
         { type: 'Post', id: postId },
         'Comments'
       ]
+    }),
+    getCategories: builder.query({
+      query: () => '/api/posts/categories',
+      transformResponse: (response: any) => {
+        return response?.data || [];
+      },
+      providesTags: ['Post']
+    }),
+    togglePostBlock: builder.mutation({
+      query: (postId) => ({
+        url: `/api/posts/${postId}/toggle-block`,
+        method: 'PUT'
+      }),
+      invalidatesTags: (result, error, postId) => [
+        { type: 'Post', id: postId },
+        'Post'
+      ]
+    }),
+
+    // Live Stream Endpoints
+    getLiveStreams: builder.query({
+      query: () => '/api/live/live-posts',
+      transformResponse: (response: any) => response.livePosts  || [],
+      providesTags: ['LiveStream']
+    }),
+
+    startLiveStream: builder.mutation({
+      query: (data) => ({
+        url: '/api/live/start',
+        method: 'POST',
+        body: data
+      }),
+      invalidatesTags: ['LiveStream']
+    }),
+
+    stopLiveStream: builder.mutation({
+      query: ({ roomId }) => ({
+        url: '/api/live/stop',
+        method: 'POST',
+        body: { roomId }
+      }),
+      invalidatesTags: ['LiveStream']
+    }),
+
+    joinLiveStream: builder.mutation({
+      query: (roomId) => ({
+        url: `/api/live/join/${roomId}`,
+        method: 'POST'
+      })
+    }),
+
+    getLiveStreamDetails: builder.query({
+      query: (roomId) => `/api/live/stream/${roomId}`,
+      providesTags: (_result, _error, roomId) => [{ type: 'LiveStream', id: roomId }]
     }),
   }),
 });
@@ -265,5 +333,12 @@ export const {
   useGetChannelPostsQuery,
   useGetAllChannelsQuery,
   useToggleChannelBlockMutation,
-  useUpdateCommentMutation
+  useUpdateCommentMutation,
+  useGetCategoriesQuery,
+  useTogglePostBlockMutation,
+  useGetLiveStreamsQuery,
+  useStartLiveStreamMutation,
+  useStopLiveStreamMutation,
+  useJoinLiveStreamMutation,
+  useGetLiveStreamDetailsQuery
 } = postApiSlice;

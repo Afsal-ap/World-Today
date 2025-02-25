@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, query } from 'express';
 import { PostController } from '../controllers/PostController';
 import { CreatePostUseCase } from '../../application/use-cases/CreatePostUseCase';
 import { PostRepositoryImpl } from '../../infrastructure/repositories/PostRepositoryImpl';
@@ -10,12 +10,28 @@ import { LikeModel } from '../../infrastructure/db/model/LikeModel';
 import { PostModel } from '../../infrastructure/db/model/PostModel';
 import { CommentModel } from '../../infrastructure/db/model/CommentModel';
 import { error } from 'console';
+import { CategoryModel } from '../../infrastructure/db/model/CategoryModel';
+import { IPostDocument } from '../../infrastructure/db/model/PostModel';
 
 const router = Router();
 const postRepository = new PostRepositoryImpl();
 const createPostUseCase = new CreatePostUseCase(postRepository);
 const postController = new PostController(createPostUseCase);
 const authMiddleware = new AuthMiddleware();
+
+router.get('/categories', authMiddleware.verifyToken.bind(authMiddleware), 
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const categories = await CategoryModel.find().select('name description');
+      res.json({
+        status: 'success',
+        data: categories
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.post('/',
   authMiddleware.verifyToken.bind(authMiddleware),
@@ -33,19 +49,30 @@ router.get('/', authMiddleware.verifyToken.bind(authMiddleware),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.query.userId as string;
-      const posts = await postRepository.findAll();
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const skip = (page - 1) * limit;
+      
+      // Only filter out blocked posts
+      const query: any = { isBlocked: false };
+
+      const posts = await PostModel.find(query)
+        .populate('channel', 'channelName')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 });
       
       const postsWithDetails = await Promise.all(
         posts.map(async (post) => {
-          const likesCount = await LikeModel.countDocuments({ postId: post.id });
-          const commentsCount = await CommentModel.countDocuments({ postId: post.id });
+          const likesCount = await LikeModel.countDocuments({ postId: post._id });
+          const commentsCount = await CommentModel.countDocuments({ postId: post._id });
           const userLike = await LikeModel.findOne({ 
-            postId: post.id, 
+            postId: post._id, 
             userId: userId
           });
           
           return {
-            ...post,
+            ...post.toObject(),
             likesCount,
             commentsCount,
             isLiked: !!userLike
@@ -138,6 +165,7 @@ router.get('/posts', authMiddleware.verifyToken.bind(authMiddleware), async (req
   try {
     const userId = (req as any).user.channelId;
     const posts = await PostModel.find();
+    const categories = await CategoryModel.find();
     
     // Get like status for each post for the current user
     const postsWithLikeStatus = await Promise.all(posts.map(async (post) => {
@@ -147,7 +175,8 @@ router.get('/posts', authMiddleware.verifyToken.bind(authMiddleware), async (req
       });
       return {
         ...post.toObject(),
-        isLiked: !!isLiked
+        isLiked: !!isLiked,
+        categories: categories.map(category => category.name)
       };
     }));
 
@@ -268,8 +297,7 @@ router.put('/:postId', authMiddleware.verifyToken.bind(authMiddleware),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const channelId = (req as any).user.channelId; 
-      const postId = req.params.postId;
-      
+      const postId = req.params.postId; 
       const post = await PostModel.findOne({ _id: postId, channelId });
       
       if (!post) {
@@ -347,6 +375,66 @@ router.get('/:postId/comments', authMiddleware.verifyToken.bind(authMiddleware),
       res.json({
         status: 'success',
         data: comments
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get('/channel/:channelId/posts', authMiddleware.verifyToken.bind(authMiddleware), 
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { channelId } = req.params;
+      
+      const posts = await PostModel.find({ channelId })
+        .sort({ createdAt: -1 })
+        .populate('channel', 'channelName');
+      
+      const postsWithDetails = await Promise.all(
+        posts.map(async (post) => {
+          const likesCount = await LikeModel.countDocuments({ postId: post._id });
+          const commentsCount = await CommentModel.countDocuments({ postId: post._id });
+          
+          return {
+            ...post.toObject(),
+            likesCount,
+            commentsCount
+          };
+        })
+      );
+
+      res.json({
+        status: 'success',
+        data: postsWithDetails
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.put('/:postId/toggle-block', authMiddleware.verifyToken.bind(authMiddleware), 
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const postId = req.params.postId;
+      const post = await PostModel.findById(postId);
+      
+      if (!post) {
+        res.status(404).json({
+          status: 'error',
+          message: 'Post not found'
+        });
+        return;
+      }
+
+      // Toggle the isBlocked status
+      (post as IPostDocument).isBlocked = !(post as IPostDocument).isBlocked;
+      await post.save();
+
+      res.json({
+        status: 'success',
+        data: post
       });
     } catch (error) {
       next(error);

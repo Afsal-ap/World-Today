@@ -5,7 +5,7 @@ export interface ICategory {
   description?: string;
   createdAt: Date;
   updatedAt: Date;
-}
+}   
 
 export interface ICategoryDocument extends ICategory, Document {}
 

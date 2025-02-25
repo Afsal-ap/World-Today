@@ -4,25 +4,33 @@ import {
   HomeIcon, NewspaperIcon, PlusCircleIcon, 
   UserCircleIcon, ChartBarIcon, Bars3Icon, XMarkIcon 
 } from '@heroicons/react/24/outline';
-import { useGetChannelDashboardQuery } from '../../store/slices/postApiSlice';
+import { useGetChannelDashboardQuery, useGetChannelProfileQuery } from '../../store/slices/postApiSlice';
+ 
+ 
+interface channelData {
+  channelName: string;
+  logo: string;
+}
+
 
 const ChannelLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { data: channelData } = useGetChannelDashboardQuery({});
   const navigate = useNavigate();
   const location = useLocation();
-
+  const { data: profileData, isLoading } = useGetChannelProfileQuery({});
+     
   const navigationItems = [
     { id: 'dashboard', path: '/channel/dashboard', icon: HomeIcon, label: 'Dashboard' },
     { id: 'articles', path: '/channel/articles', icon: NewspaperIcon, label: 'Articles' },
     { id: 'create', path: '/channel/create', icon: PlusCircleIcon, label: 'Create New' },
-    { id: 'analytics', path: '/channel/analytics', icon: ChartBarIcon, label: 'Analytics' },
+    { id: 'live', path: '/channel/live', icon: ChartBarIcon, label: 'Go Live' },
     { id: 'account', path: '/channel/account', icon: UserCircleIcon, label: 'Account' },
   ];
 
   const isActivePath = (path: string) => location.pathname === path;
-
-  return (
+    console.log(profileData,"profileData");
+  return ( 
     <div className="flex h-screen bg-gray-100">
       {/* Mobile Sidebar Toggle */}
       <button
@@ -48,8 +56,8 @@ const ChannelLayout = () => {
             <div className="w-12 h-12 rounded-full overflow-hidden">
               {channelData?.logo ? (
                 <img 
-                  src={channelData.logo}
-                  alt={channelData?.channelName}
+                  src={profileData?.data?.logo}
+                  alt={profileData?.data?.channelName}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -60,7 +68,7 @@ const ChannelLayout = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-purple-900">
-                {channelData?.channelName || 'Loading...'}
+                {profileData?.data?.channelName || 'Loading...'}
               </h1>
               <p className="text-sm text-gray-500">News Channel</p>
             </div>

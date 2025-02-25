@@ -4,7 +4,7 @@ import { VerifyOtpUseCase } from '../../application/use-cases/verify-otp';
 
 export class OTPController {
     constructor(
-        private readonly sendOtpUseCase: SendOtpUseCase,
+        private readonly sendOtpUseCase: SendOtpUseCase,    
         private readonly verifyOtpUseCase: VerifyOtpUseCase
     ) {}
 

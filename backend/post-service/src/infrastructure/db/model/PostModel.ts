@@ -10,6 +10,7 @@ export interface IPost {
   channelId: string;
   category: string;
   scheduledPublishDate?: Date;
+  isBlocked: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +30,7 @@ const postSchema = new mongoose.Schema({
   channelId: { type: String, required: true },
   category: { type: String, required: true },
   scheduledPublishDate: { type: Date },
+  isBlocked: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 }, {

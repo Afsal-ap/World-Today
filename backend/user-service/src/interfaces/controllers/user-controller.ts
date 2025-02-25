@@ -10,14 +10,14 @@ export class UserController {
     async toggleSavePost(req: Request, res: Response): Promise<void> {
       try {
         const userId = req.user?.id;
-        const { postId } = req.body;
+        const { postId, postTitle } = req.body;
         
         if (!userId) {
           res.status(401).json({ message: 'Unauthorized' });
           return;
         }
   
-        const result = await this.toggleSavePostUseCase.execute(userId, postId);
+        const result = await this.toggleSavePostUseCase.execute(userId, postId, postTitle);
         res.json({
           status: 'success',
           data: result

@@ -55,14 +55,19 @@ export class PostRepositoryImpl implements PostRepository {
       postDocument.channelId,
       postDocument.category,
       postDocument.channel?.channelName || 'Unknown Channel'
-    );
+    );     
   }
 
-  async findAll(): Promise<Post[]> {
+  async findAll(query?: any): Promise<Post[]> {
     try {
-      const postDocuments = await PostModel.find()
-        .populate<{ channel: { channelName: string } }>('channel', 'channelName');
-        
+      const { skip, take } = query || {};   
+      
+      const postDocuments = await PostModel.find({ isBlocked: false })
+        .populate<{ channel: { channelName: string } }>('channel', 'channelName')
+        .skip(skip || 0)
+        .limit(take || 10)
+        .sort({ createdAt: -1 });
+
       return postDocuments.map(postDocument => {
         const mediaPath = postDocument.media || '';
         const channelName = postDocument.channel?.channelName || 'Unknown Channel';
@@ -115,8 +120,11 @@ export class PostRepositoryImpl implements PostRepository {
         _id: { $in: postIds }
       });
       return posts;
-    } catch (error) {
-      throw error;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to fetch posts by IDs: ${error.message}`);
+      }
+      throw new Error('Failed to fetch posts by IDs: An unknown error occurred');
     }
   }
 }

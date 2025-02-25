@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { FaRegComment } from 'react-icons/fa';
 import { useToggleSavePostMutation } from '../../store/slices/userApiSlice';
+import { useGetPostsQuery } from '../../store/slices/postApiSlice';
+import { useInView } from 'react-intersection-observer';
+import { useParams } from 'react-router-dom';
+import { useGetLiveStreamsQuery } from '../../store/slices/postApiSlice';
 
 interface Post {
   id: string;
   title: string;
+  channel: {
+    channelName: string;
+  };
   content: string;
-  mediaUrl: string;
+  media: string;
   mediaType: 'image' | 'video' | null;
   category: string;
   createdAt: Date;
@@ -36,7 +43,12 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [toggleSavePost] = useToggleSavePostMutation();
-   
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const { ref, inView } = useInView();
+  const { channelId } = useParams();
+     
+  console.log(channelId,"channelidddyeee");
   const decodeToken = (token: string): any | null => {
     try {
       const payload = token.split('.')[1]; // JWT payload is the second part
@@ -55,6 +67,25 @@ const Home = () => {
     console.log('Decoded User ID:', userId);
   }
   console.log('Retrieved token from localStorage:', channelToken);
+
+  const { 
+    data: postsData = [], 
+    isFetching, 
+    isError 
+  } = useGetPostsQuery({ page, limit });
+
+  useEffect(() => {
+    if (postsData && postsData.length > 0) {
+      setPosts(prev => [...prev, ...postsData]);
+      setFilteredPosts(prev => [...prev, ...postsData]);
+    }
+  }, [postsData]);
+
+  useEffect(() => {
+    if (inView && !isFetching) {
+      setPage(prev => prev + 1);
+    }
+  }, [inView, isFetching]);
 
   useEffect(() => {
     if (!userToken) { 
@@ -75,10 +106,9 @@ const Home = () => {
         if (!userId) {
           throw new Error('User ID not found in token');
         }
-
         // Fetch posts and saved posts in parallel
         const [postsResponse, savedPostIds] = await Promise.all([
-          fetch(`http://localhost:3004/api/posts?userId=${userId}`, {
+          fetch(`http://localhost:3004/api/posts?userId=${userId}&isBlocked=false`, {
             headers: {
               'Authorization': `Bearer ${channelToken}`
             }
@@ -92,7 +122,8 @@ const Home = () => {
         }
         
         const postsData = await postsResponse.json(); 
-        
+        console.log('postssss', postsData);
+
         // Mark posts as saved based on savedPostIds
         const postsWithSavedStatus = postsData.map((post: Post) => ({
           ...post,
@@ -193,9 +224,12 @@ const Home = () => {
 
       const method = currentPost.isSaved ? 'DELETE' : 'POST';
       
-      const result = await toggleSavePost({ postId, method }).unwrap();
+      const result = await toggleSavePost({ 
+        postId, 
+        method,
+        postTitle: currentPost.title
+      }).unwrap();
       
-      // Update the posts state to reflect the new saved status
       const updatePosts = (prevPosts: Post[]) => 
         prevPosts.map(post => 
           post.id === postId 
@@ -208,6 +242,35 @@ const Home = () => {
     } catch (error) {
       console.error('Error toggling save post:', error);
     }
+  };
+
+  // Add this component to show live streams
+  const LiveStreamsList = () => {
+    const { data: liveStreams, isLoading } = useGetLiveStreamsQuery(channelId);
+
+    if (isLoading) return <div>Loading live streams...</div>;
+
+    return (
+      <div className="mt-4">
+        <h2 className="text-xl font-bold mb-2">Live Streams</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {liveStreams?.map((stream: any) => (
+            <div key={stream.roomId} className="bg-white rounded-lg shadow p-4">
+              <h3 className="font-semibold">Channel {stream.channelId}</h3>
+              <p className="text-sm text-gray-500">
+                Started: {new Date(stream.startedAt).toLocaleTimeString()}
+              </p>
+              <Link 
+                to={`/live`}
+                className="mt-2 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Watch Live
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -242,6 +305,12 @@ const Home = () => {
                 {category}
               </button>
             ))}
+            <button
+              onClick={() => navigate(`/live/${channelId}`)}
+              className="px-4 py-2 rounded-full whitespace-nowrap bg-green-600 text-white hover:bg-green-700"
+            >
+              Watch Live
+            </button>
           </div>
         </div>
       </div>
@@ -257,21 +326,22 @@ const Home = () => {
             <div className="text-red-600 text-center">{error}</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPosts.map((post) => (
+              {filteredPosts.map((post, index) => (
                 <div 
                   key={post.id} 
+                  ref={index === filteredPosts.length - 1 ? ref : null}
                   className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                   onClick={() => navigate(`/post/${post.id}`)}
                 >
-                  {post.mediaUrl && post.mediaType === 'image' && (
+                  {post.media && post.mediaType === 'image' && (
                     <img 
-                      src={`http://localhost:3004${post.mediaUrl}`}
+                      src={`http://localhost:3004${post.media}`}
                       alt={post.title}
                       className="w-full h-48 object-cover"
                       onError={(e) => {
                         const target = e.currentTarget;
                         if (!target.dataset.retried) {
-                          console.error('Image failed to load:', post.mediaUrl);
+                          console.error('Image failed to load:', post.media);
                           target.dataset.retried = 'true';
                           target.src = '/placeholder-image.jpg';
                         }
@@ -283,7 +353,7 @@ const Home = () => {
                     <div className="flex justify-between items-center mb-2">
                       <div className="text-sm text-blue-800">{post.category}</div>
                       <div className="text-sm font-medium text-gray-600">
-                        By {post.channelName}
+                        By {post.channel.channelName}
                       </div>
                     </div>
                     <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
@@ -352,6 +422,15 @@ const Home = () => {
               ))}
             </div>
           )}
+          {isFetching && (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          )}
+          {isError && (
+            <div className="text-red-600 text-center py-4">Failed to load more posts</div>
+          )}
+          <LiveStreamsList />
         </div>
       </main>
     </div>

@@ -11,9 +11,12 @@ interface User {
 }
  
 interface ProfileResponseDto {
-  status: string;
-  data: User;
-  message?: string;
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface BaseQueryArgs {
@@ -158,22 +161,28 @@ export const userApiSlice = createApi({
         };
       }    
     }),
-    getProfile: builder.query<User, void>({
+    getProfile: builder.query<ProfileResponseDto, void>({  // Changed from User to ProfileResponseDto
       query: () => ({
         url: '/api/users/profile',
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-        }
+        credentials: 'include'
       }),
       transformResponse: (response: any) => {
-        console.log('Profile response:', response);
-        if (response.status === 'success' && response.data) {
+        console.log('Raw profile response:', response); // Debug log
+        
+        // If response is in { status: 'success', data: {...} } format
+        if (response?.status === 'success' && response?.data) {
           return response.data;
         }
-        throw new Error('Failed to fetch profile');
+        
+        // If response is direct profile data
+        if (response?.id && response?.email) {
+          return response;
+        }
+    
+        throw new Error('Invalid profile data format');
       },
-      providesTags: [{ type: 'Profile', id: 'LIST' }],
+      providesTags: ['Profile']
     }),
     updateProfile: builder.mutation<ProfileResponseDto, Partial<User>>({
       query: (data) => ({
@@ -200,12 +209,13 @@ export const userApiSlice = createApi({
     }),
     toggleSavePost: builder.mutation<any, { 
       postId: string; 
-      method: 'POST' | 'DELETE' 
+      method: 'POST' | 'DELETE';
+      postTitle?: string;
     }>({
-      query: ({ postId, method }) => ({
+      query: ({ postId, method, postTitle }) => ({
         url: '/api/users/posts/save',
         method: method,
-        body: { postId },
+        body: { postId, postTitle },
       }),
       transformResponse: (response: any) => {
         if (response.status === 'success') {
@@ -214,43 +224,12 @@ export const userApiSlice = createApi({
         throw new Error('Failed to toggle save status');
       },
     }),
-    getSavedPosts: builder.query<Array<{
-      _id: string;
-      title: string;
-      content: string;
-      media: string;
-      mediaType: string;
-      channelName: string;
-      likesCount: number;
-      commentsCount: number;
-      createdAt: string;
-      updatedAt: string;
-    }>, void>({
-      query : () => ({ url: '/api/users/posts/saved', method: 'GET' }),
+    getSavedPosts: builder.query<string[], void>({
+      query: () => ({ url: '/api/users/posts/saved', method: 'GET' }),
       providesTags: ['SavedPosts'],
       transformResponse: (response: any) => {
-        console.log('Saved posts response:', response);
-        if (!response) {
-          console.error('Empty response received');
-          return [];
-        }
-        if (response.status === 'success') {
-          if (!Array.isArray(response.data)) {
-            console.error('Response data is not an array:', response.data);
-            return [];
-          }
-          return response.data.map((post: any) => ({
-            _id: post.id || post._id, // Handle both cases
-            title: post.title || '',
-            content: post.content || '',
-            media: post.media_url || post.media || '',
-            mediaType: post.media_type || post.mediaType || '',
-            channelName: post.channel_name || post.channelName || 'Unknown Channel',
-            likesCount: post.likes_count || post.likesCount || 0,
-            commentsCount: post.comments_count || post.commentsCount || 0,
-            createdAt: post.created_at || post.createdAt || '',
-            updatedAt: post.updated_at || post.updatedAt || ''
-          }));
+        if (response?.status === 'success') {
+          return response.data; // Expecting array of post IDs
         }
         return [];
       },

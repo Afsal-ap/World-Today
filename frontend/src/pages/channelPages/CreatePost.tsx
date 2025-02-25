@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
-import { useCreatePostMutation } from '../../store/slices/postApiSlice';
+import { useState, useRef } from 'react';
+import { useCreatePostMutation, useGetCategoriesQuery } from '../../store/slices/postApiSlice';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PhotoIcon } from '@heroicons/react/24/outline';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 
 interface Category {
-  id: string;
+  _id: string;
   name: string;
   description?: string;
 }
@@ -18,34 +18,12 @@ const CreatePost = () => {
   const [mediaPreview, setMediaPreview] = useState<string>('');
   const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
   const [categoryName, setCategoryName] = useState<string>('');
-  const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [createPost, { isLoading }] = useCreatePostMutation();
+  const { data: categoriesData, isLoading: categoriesLoading, isError: categoriesError } = useGetCategoriesQuery({});
   const navigate = useNavigate();
   const { channelId } = useParams();
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch('http://localhost:3000/api/categories', {
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch categories');
-        }
-        const data = await response.json();
-        setCategories(data);
-      } catch (err) {
-        console.error('Failed to fetch categories:', err);
-        setError('Failed to load categories');
-      }
-    };
-
-    fetchCategories();
-  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,6 +77,49 @@ const CreatePost = () => {
     }
   };
 
+  const renderCategorySelect = () => {
+    if (categoriesLoading) {
+      return <div>Loading categories...</div>;
+    }
+
+    if (categoriesError) {
+      return <div className="text-red-600">Error loading categories</div>;
+    }
+
+    if (!categoriesData || !Array.isArray(categoriesData)) {
+      return <div>No categories available</div>;
+    }
+
+    return (
+      <div>
+        <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+          Category
+        </label>
+        <div className="mt-1">
+          <select
+            id="category"
+            value={categoryName}
+            onChange={(e) => setCategoryName(e.target.value)}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+            required
+          >
+            <option value="">Select a category</option>
+            {categoriesData.map((category: Category) => (
+              <option key={category._id} value={category.name}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        {error && error.includes('category') && (
+          <p className="mt-1 text-sm text-red-600">
+            Please select a category
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -147,32 +168,7 @@ const CreatePost = () => {
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                  Category
-                </label>
-                <div className="mt-1">
-                  <select
-                    id="category"
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                    required
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.name}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {error && error.includes('category') && (
-                  <p className="mt-1 text-sm text-red-600">
-                    Please select a category
-                  </p>
-                )}
-              </div>
+              {renderCategorySelect()}
 
               <div>
                 <label htmlFor="content" className="block text-sm font-medium text-gray-700">

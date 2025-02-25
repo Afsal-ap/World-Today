@@ -39,8 +39,9 @@ import { authMiddleware } from './interfaces/middlewares/auth-middleware';
 import { RabbitMQService } from './infrastructure/services/rabbitMqService';
 import { UpdateCategoryUseCase } from './application/use-cases/admin/category-usecase'; 
 import { DeleteCategoryUseCase } from './application/use-cases/admin/category-usecase';
-
-const app = express();
+import { GetSavePostUseCase } from './application/use-cases/getSavePost-usecase';
+        
+const app = express();   
 
 // Middleware
 app.use(cookieParser());
@@ -71,7 +72,13 @@ const updateUserStatusUseCase = new UpdateUserStatusUseCase(userRepository);
 const adminLoginUseCase = new AdminLoginUseCase(userRepository, authService);
 const createCategoryUseCase = new CreateCategoryUseCase(categoryRepository);
 const getUserProfileUseCase = new GetUserProfileUseCase(userRepository);
-const profileController = new ProfileController(getUserProfileUseCase, userRepository, updateUserProfileUseCase);
+const profileController = new ProfileController(
+  getUserProfileUseCase,
+  userRepository,
+  updateUserProfileUseCase,
+  savedPostRepository,
+  new GetSavePostUseCase(savedPostRepository)
+);
 const toggleSavePostUseCase = new ToggleSavePostUseCase(savedPostRepository);
 const updateUserBlockStatusUseCase = new UpdateUserBlockStatusUseCase(userRepository);
 const updateCategoryUseCase = new UpdateCategoryUseCase(categoryRepository);
@@ -129,12 +136,9 @@ app.post('/auth/login', (req, res) => authController.login(req, res));
 app.post('/auth/refresh-token', (req, res) => authController.refreshToken(req, res));  
 app.post('/auth/send-otp', (req, res) => otpController.sendOtp(req, res)); 
 app.post('/auth/verify-otp', (req, res) => otpController.verifyOtp(req, res));  
-app.use('/api/admin', setupAdminRoutes(adminController,userRepository));  
-// app.use('/api/categories', categoryRoutes);
+app.use('/api/admin', setupAdminRoutes(adminController, userRepository));  
 app.use('/api/users', profileRoutes); 
-app.use('/api/users', setupUserRoutes(userController, savedPostRepository));
-app.get('/api/users/profile', authMiddleware, profileRoutes);
-app.post('/api/users/profile', authMiddleware, profileRoutes);
+app.use('/api/users', setupUserRoutes(userController, savedPostRepository, profileController));
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

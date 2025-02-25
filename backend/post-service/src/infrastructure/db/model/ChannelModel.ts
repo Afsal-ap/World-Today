@@ -7,7 +7,7 @@ export interface IChannel {
   websiteOrSocialLink: string;
   logo: string;
   password: string;
-  isVerified: boolean;
+  isVerified: boolean;  
   isBlocked: boolean;
   createdAt: Date;
   bio: string;

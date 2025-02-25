@@ -17,7 +17,7 @@ message Post {
   string media_url = 4;
   string media_type = 5;
   string channel_name = 6;
-  int32 likes_count = 7;  
+  int32 likes_count = 7;
   int32 comments_count = 8;
   string created_at = 9;
   string updated_at = 10;

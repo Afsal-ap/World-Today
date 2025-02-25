@@ -10,7 +10,6 @@ import ChannelOtpVerification from './pages/channelPages/ChannelOtpVerification'
 import DashboardOverview from './pages/channelPages/DashboardOverview';
 import ArticlesList from './pages/channelPages/ArticlesList';
 import CreatePost from './pages/channelPages/CreatePost';
-import Analytics from './pages/channelPages/Analytics';
 import AccountSettings from './pages/channelPages/AccountSettings';
 import AdminLayout from './components/layout/AdminLayout';
 import UsersList from './pages/adminPages/UsersList';
@@ -23,6 +22,8 @@ import SinglePost from './components/DetailedPost';
 import UserLayout from './components/layout/UserLayout';
 import UserProfile from './pages/userPages/UserProfile';
 import DetailChannelPost from './components/DetailChannelPost';
+import Live from './pages/channelPages/Live';
+import LiveWatch from './pages/userPages/LiveWatch';
 // import AdvertisersList from './pages/adminPages/AdvertisersList';
 // import AdminSettings from './pages/adminPages/AdminSettings';
 import { ToastContainer } from 'react-toastify';
@@ -36,8 +37,9 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/post/:postId" element={<SinglePost />} />
             <Route path="/profile" element={<UserProfile />} />
+            <Route path="/live" element={<LiveWatch />} />
           </Route>
-
+    
           {/* Public Routes without Header */}
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
@@ -55,7 +57,7 @@ function App() {
             <Route path="home" element={<DashboardOverview />} />
             <Route path="articles" element={<ArticlesList />} />
             <Route path="create" element={<CreatePost />} />
-            <Route path="analytics" element={<Analytics />} />
+            <Route path="live" element={<Live />} />
             <Route path="account" element={<AccountSettings />} />
           </Route>
 

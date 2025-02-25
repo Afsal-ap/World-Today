@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const SavedPostSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   postId: { type: String, required: true },
+  postTitle: { type: String, required: true },
   savedAt: { type: Date, default: Date.now }
 });
 

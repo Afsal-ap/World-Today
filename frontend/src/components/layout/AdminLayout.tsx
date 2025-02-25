@@ -35,7 +35,7 @@ const AdminLayout = () => {
             <span className="text-2xl font-bold text-white">Admin Panel</span>
           </div>
         </div>
-
+      
         {/* Navigation */}
         <nav className="mt-6">
           <div className="px-4 space-y-2">
