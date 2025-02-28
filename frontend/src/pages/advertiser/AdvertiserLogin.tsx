@@ -22,9 +22,10 @@ const AdvertiserLogin = () => {
       try {
         const result = await login(values).unwrap();
         localStorage.setItem('advertiserToken', result.accessToken);
+        localStorage.setItem('advertiserRefreshToken', result.refreshToken);
         navigate('/advertiser/dashboard');
       } catch (err: any) {
-        formik.setStatus(err.data?.message || 'Login failed');
+        formik.setStatus(err.data?.error || 'Login failed');
       }
     },
   });

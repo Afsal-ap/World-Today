@@ -15,10 +15,20 @@ export class AdvertiserAuthController {
 
     async login(req: Request, res: Response) {
         try {
-            const tokens = await this.advertiserAuthUseCase.login(req.body);
+            const tokens = await this.advertiserAuthUseCase.login(req.body.email, req.body.password);
             res.status(200).json(tokens);
         } catch (error: any) {
             res.status(401).json({ error: error.message });
+        }
+    }
+
+    async verifyOtp(req: Request, res: Response) {
+        try {
+            const { email, otp } = req.body;
+            await this.advertiserAuthUseCase.verifyOtp(email, otp);
+            res.status(200).json({ message: 'Email verified successfully' });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
         }
     }
 } 

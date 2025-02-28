@@ -1,68 +1,131 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, { Secret, SignOptions } from "jsonwebtoken";
 import { AdvertiserRepository } from "../../domain/repositories/AdvertiserRepository";
-import { RegisterAdvertiserDTO, LoginDTO } from "../dto/AdvertiserAuthDTO";
+import { Advertiser } from "../../domain/entities/Advertiser";
 import { v4 as uuidv4 } from 'uuid';
-import { OtpService } from '../../infrastructure/utils/otpUtils'
+import dotenv from 'dotenv';
 
+dotenv.config();
+
+interface TokenPayload {
+  advertiserId: string;
+}
+
+interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
 
 export class AdvertiserAuthUseCase {
-    constructor(private advertiserRepository: AdvertiserRepository) {}
+    private readonly accessTokenSecret: Secret;
+    private readonly refreshTokenSecret: Secret;
+
+    constructor(private advertiserRepository: AdvertiserRepository) {
+        // Validate and set secrets in constructor
+        const accessSecret = process.env.ACCESS_TOKEN_SECRET;
+        const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
+
+        if (!accessSecret) {
+            throw new Error("ACCESS_TOKEN_SECRET is not configured in environment variables");
+        }
+        if (!refreshSecret) {
+            throw new Error("REFRESH_TOKEN_SECRET is not configured in environment variables");
+        }
+
+        this.accessTokenSecret = accessSecret;
+        this.refreshTokenSecret = refreshSecret;
+    }
   
-    async registerAdvertiser(data: RegisterAdvertiserDTO): Promise<void> {
-        const existingAdvertiser = await this.advertiserRepository.findByEmail(data.email);
+    async registerAdvertiser(advertiserData: Partial<Advertiser>): Promise<void> {
+        if (!advertiserData.email || !advertiserData.password) {
+            throw new Error("Email and password are required");
+        }
+
+        const existingAdvertiser = await this.advertiserRepository.findByEmail(advertiserData.email);
         if (existingAdvertiser) {
             throw new Error("Advertiser already exists with this email.");
         }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
-
         try {
-            // Send OTP first
-            await OtpService.sendOTP(data.email, data.companyName);
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(advertiserData.password, salt);
 
-            // If email sent successfully, save user with OTP
-            const hashedPassword = await bcrypt.hash(data.password, 10);
-            const advertiser = {
-                id: uuidv4(),
-                ...data,
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            const newAdvertiser: Partial<Advertiser> = {
+                ...advertiserData,
                 password: hashedPassword,
-                isVerified: false,
                 otp,
-                otpExpiry
+                otpExpiry: new Date(Date.now() + 10 * 60 * 1000),
+                isVerified: process.env.NODE_ENV === 'development'
             };
 
-            await this.advertiserRepository.createAdvertiser(advertiser);
+            await this.advertiserRepository.save(newAdvertiser);
         } catch (error) {
-            console.error('Error in registerAdvertiser:', error);
-            throw new Error('Failed to register advertiser');
+            throw new Error(`Registration failed: ${(error as Error).message}`);
         }
     }
 
-    async login(data: LoginDTO): Promise<{ accessToken: string; refreshToken: string }> {
-        const advertiser = await this.advertiserRepository.findByEmail(data.email);
-        if (!advertiser) throw new Error("Advertiser not found.");
-
-        if (!advertiser.id) {
-            throw new Error("Advertiser ID is missing.");
+    async login(email: string, password: string): Promise<AuthTokens> {
+        const advertiser = await this.advertiserRepository.findByEmail(email);
+        if (!advertiser || !advertiser.id) {
+            throw new Error("Invalid email or password");
         }
 
-        const isPasswordValid = await bcrypt.compare(data.password, advertiser.password);
-        if (!isPasswordValid) throw new Error("Invalid credentials.");
+        const isPasswordValid = await bcrypt.compare(password, advertiser.password);
+        if (!isPasswordValid) {
+            throw new Error("Invalid email or password");
+        }
 
-        const accessToken = this.generateAccessToken(advertiser.id);
-        const refreshToken = this.generateRefreshToken(advertiser.id);
+        return {
+            accessToken: this.generateAccessToken(advertiser.id),
+            refreshToken: this.generateRefreshToken(advertiser.id)
+        };
+    }
 
-        await this.advertiserRepository.updateAdvertiser(advertiser.id, { refreshToken });
-        return { accessToken, refreshToken };
+    async verifyOtp(email: string, otp: string): Promise<void> {
+        const advertiser = await this.advertiserRepository.findByEmail(email);
+        
+        if (!advertiser) {
+            throw new Error("Advertiser not found");
+        }
+
+        if (advertiser.isVerified) {
+            throw new Error("Email already verified");
+        }
+
+        if (!advertiser.otp) {
+            throw new Error("No OTP found for this account");
+        }
+
+        if (advertiser.otp !== otp) {
+            throw new Error("Invalid OTP");
+        }
+
+        if (advertiser.otpExpiry && new Date() > new Date(advertiser.otpExpiry)) {
+            throw new Error("OTP has expired. Please request a new one");
+        }
+
+        await this.advertiserRepository.updateAdvertiser(advertiser.id!, {
+            isVerified: true,
+            otp: undefined,
+            otpExpiry: undefined
+        });
     }
 
     private generateAccessToken(advertiserId: string): string {
-        return jwt.sign({ advertiserId }, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: process.env.TOKEN_EXPIRY });
-    }
+        const payload: TokenPayload = { advertiserId };
+        const options: SignOptions = { expiresIn: '1h' };
 
-    private generateRefreshToken(advertiserId: string): string {
-        return jwt.sign({ advertiserId }, process.env.REFRESH_TOKEN_SECRET!, { expiresIn: process.env.REFRESH_TOKEN_EXPIRY });
+        return jwt.sign(payload, this.accessTokenSecret, options);
     }
-} 
+    
+    private generateRefreshToken(advertiserId: string): string {
+        const payload: TokenPayload = { advertiserId };
+        const options: SignOptions = {
+            expiresIn: parseInt(process.env.REFRESH_TOKEN_EXPIRY || '7d', 10)
+        };
+
+        return jwt.sign(payload, this.refreshTokenSecret, options);
+    }
+}

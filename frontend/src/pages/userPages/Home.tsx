@@ -5,7 +5,6 @@ import { useToggleSavePostMutation } from '../../store/slices/userApiSlice';
 import { useGetPostsQuery } from '../../store/slices/postApiSlice';
 import { useInView } from 'react-intersection-observer';
 import { useParams } from 'react-router-dom';
-import { useGetLiveStreamsQuery } from '../../store/slices/postApiSlice';
 
 interface Post {
   id: string;
@@ -244,35 +243,6 @@ const Home = () => {
     }
   };
 
-  // Add this component to show live streams
-  const LiveStreamsList = () => {
-    const { data: liveStreams, isLoading } = useGetLiveStreamsQuery(channelId);
-
-    if (isLoading) return <div>Loading live streams...</div>;
-
-    return (
-      <div className="mt-4">
-        <h2 className="text-xl font-bold mb-2">Live Streams</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {liveStreams?.map((stream: any) => (
-            <div key={stream.roomId} className="bg-white rounded-lg shadow p-4">
-              <h3 className="font-semibold">Channel {stream.channelId}</h3>
-              <p className="text-sm text-gray-500">
-                Started: {new Date(stream.startedAt).toLocaleTimeString()}
-              </p>
-              <Link 
-                to={`/live`}
-                className="mt-2 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Watch Live
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -292,25 +262,27 @@ const Home = () => {
             >
               All Categories
             </button>
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => filterPostsByCategory(category)}
-                className={`px-4 py-2 rounded-full whitespace-nowrap ${
-                  selectedCategory === category
-                    ? 'bg-blue-900 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
+            <div className="flex space-x-2 overflow-x-auto py-2">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => filterPostsByCategory(category)}
+                  className={`px-4 py-2 rounded-full whitespace-nowrap ${
+                    selectedCategory === category
+                      ? 'bg-blue-900 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+              <Link
+                to="/live"
+                className="px-4 py-2 rounded-full whitespace-nowrap bg-green-600 text-white hover:bg-green-700"
               >
-                {category}
-              </button>
-            ))}
-            <button
-              onClick={() => navigate(`/live/${channelId}`)}
-              className="px-4 py-2 rounded-full whitespace-nowrap bg-green-600 text-white hover:bg-green-700"
-            >
-              Watch Live
-            </button>
+                Watch Live
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -430,7 +402,6 @@ const Home = () => {
           {isError && (
             <div className="text-red-600 text-center py-4">Failed to load more posts</div>
           )}
-          <LiveStreamsList />
         </div>
       </main>
     </div>

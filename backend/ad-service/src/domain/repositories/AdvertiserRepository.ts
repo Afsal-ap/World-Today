@@ -5,4 +5,5 @@ export interface AdvertiserRepository {
     findByEmail(email: string): Promise<Advertiser | null>;
     findById(advertiserId: string): Promise<Advertiser | null>;
     updateAdvertiser(advertiserId: string, advertiser: Partial<Advertiser>): Promise<void>;
+    save(advertiser: Partial<Advertiser>): Promise<void>;
 } 

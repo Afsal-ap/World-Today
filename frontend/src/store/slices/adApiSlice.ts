@@ -4,6 +4,14 @@ export const adApiSlice = createApi({
   reducerPath: 'adApi',
   baseQuery: fetchBaseQuery({ 
     baseUrl: 'http://localhost:3002',
+    prepareHeaders: (headers, { getState }) => {
+      // Get token from localStorage
+      const token = localStorage.getItem('advertiserToken');
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      return headers;
+    },
     credentials: 'include',
   }),
   endpoints: (builder) => ({

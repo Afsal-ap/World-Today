@@ -6,5 +6,7 @@ export interface Advertiser {
     phoneNumber: string;
     password: string;
     refreshToken?: string;
-    isVerified?: boolean;
+    isVerified?: boolean; 
+    otp?: string;
+    otpExpiry?: Date;
 } 

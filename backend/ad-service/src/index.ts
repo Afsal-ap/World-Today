@@ -5,12 +5,15 @@ import AdvertiserAuthRoutes from "./interfaces/routes/AdvertiserAuthRoutes";
 import connectToMongoDB from "./infrastructure/db/db-connection/mongoose.connection";
 import { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
-const upload = multer({ dest: 'uploads/' });
-
+import AdRoutes from "./interfaces/routes/AdRoutes";
+// Load environment variables first
 dotenv.config();
 
 const app = express();
+const upload = multer({ dest: 'uploads/' });
 
+// Middleware
+app.use(express.json());
 app.use(cors({
     origin: 'http://localhost:5173',
     credentials: true,
@@ -18,40 +21,42 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
-
+// Connect to MongoDB
 connectToMongoDB();
 
-app.use("/", AdvertiserAuthRoutes);
+// Check required environment variables
+const requiredEnvVars = ['MONGODB_URI', 'ACCESS_TOKEN_SECRET', 'REFRESH_TOKEN_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
-app.post('/advertiser/register', upload.single('logo'), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    console.log('Received registration data:', {
-      body: req.body,
-      file: req.file
-    });
-
-    const requiredFields = ['companyName', 'contactPersonName', 'email', 'phoneNumber', 'password'];
-    for (const field of requiredFields) {
-      if (!req.body[field]) {
-        res.status(400).json({
-          message: `${field} is required`
-        });
-        return;
-      }
+if (missingEnvVars.length > 0) {
+    console.error('Missing required environment variables:', missingEnvVars);
+    console.error('Please check your .env file');
+    // In development, we might want to continue anyway
+    if (process.env.NODE_ENV !== 'development') {
+        process.exit(1);
     }
+}
 
+// Routes
+app.use('/advertiser', AdvertiserAuthRoutes);
+app.use('/api/ads', AdRoutes);
 
-    res.status(201).json({
-      message: 'Registration successful'
-    });
-    return;
-  } catch (error) {
-    next(error);
-  }
+// Error handling middleware
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'Internal server error' });
 });
 
 const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
     console.log(`Ad service running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Log development mode settings
+    if (process.env.NODE_ENV === 'development') {
+        console.log('Development settings:');
+        console.log(`- Skip email sending: ${process.env.SKIP_EMAIL === 'true' ? 'Yes' : 'No'}`);
+        console.log(`- Allow registration without email: ${process.env.ALLOW_REGISTRATION_WITHOUT_EMAIL === 'true' ? 'Yes' : 'No'}`);
+        console.log(`- Auto verify accounts: ${process.env.AUTO_VERIFY === 'true' ? 'Yes' : 'No'}`);
+    }
 });

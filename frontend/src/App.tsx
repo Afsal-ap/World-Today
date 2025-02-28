@@ -26,7 +26,16 @@ import Live from './pages/channelPages/Live';
 import LiveWatch from './pages/userPages/LiveWatch';
 // import AdvertisersList from './pages/adminPages/AdvertisersList';
 // import AdminSettings from './pages/adminPages/AdminSettings';
+import AdvertiserLogin from './pages/advertiser/AdvertiserLogin';
+import AdvertiserRegister from './pages/advertiser/AdvertiserRegister';
+import AdvertiserDashboard from './pages/advertiser/AdvertiserDashboard';
+import AdvertiserOtpVerification from './pages/advertiser/AdvertiserOtpVerification';
+import CreateNewAd from './pages/advertiser/CreateNewAd';
+import MyAds from './pages/advertiser/MyAds';
+import AdvertiserAccount from './pages/advertiser/AdvertiserAccount';
 import { ToastContainer } from 'react-toastify';
+
+
 function App() {
   return (    
     <>
@@ -76,6 +85,21 @@ function App() {
           </Route>
 
           <Route path="/channel/posts/:postId" element={<DetailChannelPost />} />
+
+            {/* advertiser routes? */} 
+
+            <Route path='/advertiser/login' element={<AdvertiserLogin />} />
+            <Route path='/advertiser/register' element={<AdvertiserRegister />} />
+            <Route path='/advertiser/dashboard' element={<AdvertiserDashboard />} />
+            {/* <Route path='/advertiser/create' element={<AdvertiserCreate />} />
+            <Route path='/advertiser/account' element={<AdvertiserAccount />} />
+            <Route path='/advertiser/posts' element={<AdvertiserPosts />} />
+            <Route path='/advertiser/profile' element={<AdvertiserProfile />} /> */}
+            <Route path='/advertiser/verify-otp' element={<AdvertiserOtpVerification />} />
+            <Route path='/advertiser/create-new-ad' element={<CreateNewAd />} />
+            <Route path='/advertiser/my-ads' element={<MyAds />} />
+            <Route path='/advertiser/account' element={<AdvertiserAccount />} />
+
         </Routes>
       </Router>
       <ToastContainer />
