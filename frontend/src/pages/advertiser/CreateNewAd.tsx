@@ -2,17 +2,30 @@ import React, { useState } from 'react';
 import { FiHome, FiPlus, FiLogOut, FiUser } from 'react-icons/fi';
 import { HiOutlineSpeakerphone } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { useCreatePaymentIntentMutation, useCreateAdMutation, useUploadAdImageMutation } from '../../store/slices/adApiSlice';
+import PaymentForm from '../../components/adComponents/PaymentForm';
 
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
+ 
+ console.log(import.meta.env.VITE_STRIPE_PUBLIC_KEY,"keyyyyy");
 const CreateNewAd = () => {
   const navigate = useNavigate();
+  const [createPaymentIntent] = useCreatePaymentIntentMutation();
+  const [createAd] = useCreateAdMutation();
+  const [uploadImage] = useUploadAdImageMutation();
+  const [clientSecret, setClientSecret] = useState<string>('');
+
   const [formData, setFormData] = useState({
-    name: '',
+    advertiserId: 'user123',
+    title: '',
     description: '',
-    budget: '',
-    startDate: '',
-    endDate: '',
-    targetAudience: '',
-    adType: 'banner',
+    placement: 'sidebar' as 'sidebar' | 'topbar' | 'popup',
+    targetUrl: '',
+    imageUrl: '',
+    price: 0,
+    status: 'pending' as 'pending' | 'approved' | 'rejected',
     imageFile: null as File | null,
     imagePreview: ''
   });
@@ -36,13 +49,56 @@ const CreateNewAd = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send the data to your API
-    console.log('Form submitted:', formData);
-    alert('Ad created successfully!');
-    // Redirect to My Ads page after submission
-    navigate('/advertiser/my-ads');
+  
+    try {
+      if (!formData.imageFile) throw new Error("Image is required");
+  
+      const imageFormData = new FormData();
+      imageFormData.append("image", formData.imageFile);
+      const { imageUrl } = await uploadImage(imageFormData).unwrap();
+  
+      // Set image URL
+      setFormData((prev) => ({ ...prev, imageUrl }));
+  
+      const priceMap = { sidebar: 50, topbar: 100, popup: 150 };
+      const price = priceMap[formData.placement];
+  
+      // Create payment intent
+      const response = await createPaymentIntent({
+        amount: price,
+        placement: formData.placement,
+      }).unwrap();
+  
+      // Ensure state updates properly
+      setClientSecret(response.clientSecret);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+  
+
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
+    try {
+      await createAd({
+        adData: {
+          advertiserId: formData.advertiserId,
+          title: formData.title,
+          description: formData.description,
+          placement: formData.placement,
+          targetUrl: formData.targetUrl,
+          imageUrl: formData.imageUrl,
+          price: formData.price,
+          status: formData.status
+        },
+        paymentIntentId
+      }).unwrap();
+
+      navigate('/advertiser/my-ads');
+    } catch (error) {
+      console.error('Error creating ad:', error);
+    }
   };
 
   const handleLogout = () => {
@@ -116,134 +172,100 @@ const CreateNewAd = () => {
 
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="bg-white shadow rounded-lg p-6">
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="col-span-2">
-                  <h2 className="text-xl font-semibold mb-4">Ad Details</h2>
+            {clientSecret ? (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <PaymentForm onSuccess={handlePaymentSuccess} />
+              </Elements>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="col-span-2">
+                    <h2 className="text-xl font-semibold mb-4">Ad Details</h2>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">Ad Title</label>
+                    <input
+                      type="text"
+                      id="title"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      required
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="placement" className="block text-sm font-medium text-gray-700">Ad Placement</label>
+                    <select
+                      id="placement"
+                      name="placement"
+                      value={formData.placement}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="sidebar">Sidebar</option>
+                      <option value="topbar">Topbar</option>
+                      <option value="popup">Popup</option>
+                    </select>
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700">Ad Description</label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      rows={3}
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    ></textarea>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-700">Target URL</label>
+                    <input
+                      type="text"
+                      id="targetUrl"
+                      name="targetUrl"
+                      value={formData.targetUrl}
+                      onChange={handleInputChange}
+                      placeholder="e.g., https://example.com"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <label htmlFor="imageFile" className="block text-sm font-medium text-gray-700">Ad Creative</label>
+                    <input
+                      type="file"
+                      id="imageFile"
+                      name="imageFile"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                    />
+                    {formData.imagePreview && (
+                      <div className="mt-4">
+                        <p className="text-sm text-gray-500 mb-2">Preview:</p>
+                        <img src={formData.imagePreview} alt="Ad preview" className="max-h-40 rounded-md" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="col-span-2 mt-6">
+                    <button
+                      type="submit"
+                      className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      
+                      Create Ad
+                    </button>
+                  </div>
                 </div>
-                
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Ad Name</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="adType" className="block text-sm font-medium text-gray-700">Ad Type</label>
-                  <select
-                    id="adType"
-                    name="adType"
-                    value={formData.adType}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="banner">Banner Ad</option>
-                    <option value="video">Video Ad</option>
-                    <option value="native">Native Ad</option>
-                    <option value="popup">Popup Ad</option>
-                  </select>
-                </div>
-                
-                <div className="col-span-2">
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">Ad Description</label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    rows={3}
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  ></textarea>
-                </div>
-                
-                <div>
-                  <label htmlFor="budget" className="block text-sm font-medium text-gray-700">Budget (USD)</label>
-                  <input
-                    type="number"
-                    id="budget"
-                    name="budget"
-                    value={formData.budget}
-                    onChange={handleInputChange}
-                    required
-                    min="1"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="targetAudience" className="block text-sm font-medium text-gray-700">Target Audience</label>
-                  <input
-                    type="text"
-                    id="targetAudience"
-                    name="targetAudience"
-                    value={formData.targetAudience}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Males 18-34, Tech enthusiasts"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Start Date</label>
-                  <input
-                    type="date"
-                    id="startDate"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">End Date</label>
-                  <input
-                    type="date"
-                    id="endDate"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                
-                <div className="col-span-2">
-                  <label htmlFor="imageFile" className="block text-sm font-medium text-gray-700">Ad Creative</label>
-                  <input
-                    type="file"
-                    id="imageFile"
-                    name="imageFile"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                  />
-                  {formData.imagePreview && (
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-500 mb-2">Preview:</p>
-                      <img src={formData.imagePreview} alt="Ad preview" className="max-h-40 rounded-md" />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="col-span-2 mt-6">
-                  <button
-                    type="submit"
-                    className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Create Ad
-                  </button>
-                </div>
-              </div>
-            </form>
+              </form>
+            )}
           </div>
         </main>
       </div>

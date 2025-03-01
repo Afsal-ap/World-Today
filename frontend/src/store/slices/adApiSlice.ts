@@ -1,4 +1,10 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { CreateAdDTO } from '../../types/ad';
+
+export interface StripePaymentIntent {
+  clientSecret: string;
+  paymentIntentId: string;
+}
 
 export const adApiSlice = createApi({
   reducerPath: 'adApi',
@@ -36,6 +42,33 @@ export const adApiSlice = createApi({
         body: data,
       }),
     }),
+    createPaymentIntent: builder.mutation<StripePaymentIntent, { amount: number, placement: string }>({
+      query: (data) => ({
+        url: '/api/ads/create-payment-intent',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    createAd: builder.mutation<any, { adData: CreateAdDTO, paymentIntentId: string }>({
+      query: ({ adData, paymentIntentId }) => ({
+        url: '/api/ads',
+        method: 'POST',
+        body: {
+          ...adData,
+          paymentIntentId,
+        },
+      }),
+    }),
+    uploadAdImage: builder.mutation<{ imageUrl: string }, FormData>({
+      query: (formData) => ({
+        url: '/api/ads/upload-image',
+        method: 'POST',
+        body: formData,
+      }),
+    }),
+    getAdPricing: builder.query<Record<string, number>, void>({
+      query: () => '/api/ads/ad-pricing',
+    }),
   }),
 });
 
@@ -43,4 +76,8 @@ export const {
   useAdvertiserRegisterMutation,
   useAdvertiserLoginMutation,
   useVerifyOtpMutation,
+  useCreatePaymentIntentMutation,
+  useCreateAdMutation,
+  useUploadAdImageMutation,
+  useGetAdPricingQuery,
 } = adApiSlice;
