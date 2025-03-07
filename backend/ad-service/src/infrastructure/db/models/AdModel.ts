@@ -5,8 +5,7 @@ export interface IAdModel extends Document {
   title: string;
   description: string;
   imageUrl: string;
-  targetUrl: string;
-  placement: "sidebar" | "topbar" | "popup";
+  placement: "popup" | "card";
   price: number;
   status: "pending" | "approved" | "rejected";
   createdAt: Date;
@@ -18,8 +17,7 @@ const AdSchema: Schema = new Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   imageUrl: { type: String, required: true },
-  targetUrl: { type: String, required: true },
-  placement: { type: String, enum: ["sidebar", "topbar", "popup"], required: true },
+  placement: { type: String, enum: ["popup" , "card"], required: true },
   price: { type: Number, required: true },
   status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
   createdAt: { type: Date, default: Date.now },

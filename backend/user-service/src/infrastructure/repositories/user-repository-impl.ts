@@ -8,23 +8,33 @@ export class UserRepositoryImpl implements IUserRepository {
             email: user.email,
             password: user.password,
             name: user.name,
-            phone: user.phone
+            phone: user.phone,
+            isAdmin: user.isAdmin,
+            isBlocked: user.isBlocked,
+            stripeCustomerId: user.stripeCustomerId,
+            subscriptionId: user.subscriptionId,
+            subscriptionStatus: user.subscriptionStatus,
         });
 
         return new User({
             id: newUser._id.toString(),
             email: newUser.email,
-            password: newUser.password,
+            password: newUser.password || undefined,
             name: newUser.name,
             phone: newUser.phone,
+            isAdmin: newUser.isAdmin,
+            isBlocked: newUser.isBlocked,
             createdAt: newUser.createdAt,
-            updatedAt: newUser.updatedAt
+            updatedAt: newUser.updatedAt,
+            stripeCustomerId: newUser.stripeCustomerId || undefined,
+            subscriptionId: newUser.subscriptionId || undefined,
+            subscriptionStatus: newUser.subscriptionStatus,
         });
     }
 
     async findByEmail(email: string): Promise<User | null> {
-        const userDoc = await UserModel.findOne({ email });
-        
+        const userDoc = await UserModel.findOne({ email }).exec();
+
         if (!userDoc) {
             return null;
         }
@@ -32,40 +42,49 @@ export class UserRepositoryImpl implements IUserRepository {
         return new User({
             id: userDoc._id.toString(),
             email: userDoc.email,
-            password: userDoc.password,
+            password: userDoc.password || undefined,
             name: userDoc.name,
             phone: userDoc.phone,
             isAdmin: userDoc.isAdmin,
+            isBlocked: userDoc.isBlocked,
             createdAt: userDoc.createdAt,
-            updatedAt: userDoc.updatedAt
+            updatedAt: userDoc.updatedAt,
+            stripeCustomerId: userDoc.stripeCustomerId || undefined,
+            subscriptionId: userDoc.subscriptionId || undefined,
+            subscriptionStatus: userDoc.subscriptionStatus,
         });
     }
 
     async findById(id: string): Promise<User | null> {
-        const user = await UserModel.findById(id);
-        if (!user) return null;
+        const userDoc = await UserModel.findById(id).exec();
+        if (!userDoc) return null;
 
         return new User({
-            id: user._id.toString(),
-            email: user.email,
-            password: user.password,
-            name: user.name,
-            phone: user.phone,
-            isAdmin: user.isAdmin,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt
+            id: userDoc._id.toString(),
+            email: userDoc.email,
+            password: userDoc.password || undefined,
+            name: userDoc.name,
+            phone: userDoc.phone,
+            isAdmin: userDoc.isAdmin,
+            isBlocked: userDoc.isBlocked,
+            createdAt: userDoc.createdAt,
+            updatedAt: userDoc.updatedAt,
+            stripeCustomerId: userDoc.stripeCustomerId || undefined,
+            subscriptionId: userDoc.subscriptionId || undefined,
+            subscriptionStatus: userDoc.subscriptionStatus,
         });
     }
 
     async findAll(skip: number, limit: number): Promise<User[]> {
         try {
             const users = await UserModel.find()
-                .select('-password')
+                .select('-password') // Exclude password from results
                 .skip(skip)
                 .limit(limit)
-                .lean();
+                .lean()
+                .exec();
 
-            return users.map(user => new User({
+            return users.map((user) => new User({
                 id: user._id.toString(),
                 email: user.email,
                 name: user.name,
@@ -74,7 +93,10 @@ export class UserRepositoryImpl implements IUserRepository {
                 isBlocked: user.isBlocked,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt,
-                password: ''
+                stripeCustomerId: user.stripeCustomerId || undefined,
+                subscriptionId: user.subscriptionId || undefined,    
+                subscriptionStatus: user.subscriptionStatus,
+                password: undefined, // Explicitly set to undefined since excluded
             }));
         } catch (error) {
             console.error('Error in findAll:', error);
@@ -83,19 +105,28 @@ export class UserRepositoryImpl implements IUserRepository {
     }
 
     async count(): Promise<number> {
-        return await UserModel.countDocuments();
+        return await UserModel.countDocuments().exec();
     }
 
     async updateUserStatus(userId: string, isAdmin: boolean): Promise<void> {
-        await UserModel.findByIdAndUpdate(userId, { isAdmin });
-    } 
+        const result = await UserModel.findByIdAndUpdate(
+            userId,
+            { isAdmin, updatedAt: new Date() },
+            { new: true }
+        ).exec();
+
+        if (!result) {
+            throw new Error('User not found');
+        }
+    }
+
     async updateUserBlockStatus(userId: string, isBlocked: boolean): Promise<void> {
         const updatedUser = await UserModel.findByIdAndUpdate(
             userId,
-            { isBlocked },
-            { new: true }  // Return the updated document
-        );
-        
+            { isBlocked, updatedAt: new Date() },
+            { new: true }
+        ).exec();
+
         if (!updatedUser) {
             throw new Error('User not found');
         }
@@ -106,19 +137,23 @@ export class UserRepositoryImpl implements IUserRepository {
             userId,
             { ...updateData, updatedAt: new Date() },
             { new: true }
-        );
+        ).exec();
 
         if (!updatedUser) return null;
 
         return new User({
             id: updatedUser._id.toString(),
             email: updatedUser.email,
-            password: updatedUser.password,
+            password: updatedUser.password || undefined,
             name: updatedUser.name,
             phone: updatedUser.phone,
             isAdmin: updatedUser.isAdmin,
+            isBlocked: updatedUser.isBlocked,
             createdAt: updatedUser.createdAt,
-            updatedAt: updatedUser.updatedAt
+            updatedAt: updatedUser.updatedAt,
+            stripeCustomerId: updatedUser.stripeCustomerId || undefined,
+            subscriptionId: updatedUser.subscriptionId || undefined,
+            subscriptionStatus: updatedUser.subscriptionStatus,
         });
     }
 }

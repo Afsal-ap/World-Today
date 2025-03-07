@@ -8,9 +8,11 @@ import fs from "fs";
 
 const router = express.Router();
 
+router.get("/active-ads", AdController.getActiveAds);
 router.post("/create-payment-intent", authenticateAdvertiser, AdController.createPaymentIntent);
 router.post("/create-ad", authenticateAdvertiser, AdController.create);
-router.get("/ads/:advertiserId", authenticateAdvertiser, AdController.getByAdvertiser);
+router.get("/:advertiserId", authenticateAdvertiser, AdController.getByAdvertiser);
+router.delete("/delete-ad/:adId", authenticateAdvertiser, AdController.deleteAd);
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadDir = path.resolve(process.cwd(), "uploads/");

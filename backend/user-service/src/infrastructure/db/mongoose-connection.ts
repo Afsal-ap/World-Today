@@ -16,13 +16,20 @@ export const connectDatabase = async (): Promise<void> => {
 
 const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String },
     name: { type: String, required: true },
     phone: { type: String, required: true },
     isAdmin: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+    stripeCustomerId: { type: String },
+    subscriptionId: { type: String },
+    subscriptionStatus: {
+        type: String,
+        enum: ['active', 'inactive', 'pending', 'canceled'],
+        default: 'inactive',
+    },
 });
 
 export const UserModel = mongoose.model('User', UserSchema);

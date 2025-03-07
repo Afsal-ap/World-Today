@@ -36,7 +36,11 @@ export class AdController {
     try {
       const { amount, placement } = req.body;
       const paymentIntent = await paymentService.createPaymentIntent(amount, "usd");
-      res.json(paymentIntent);
+      
+      res.json({
+        clientSecret: paymentIntent.clientSecret,
+        paymentIntentId: paymentIntent.paymentIntentId
+      });
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
@@ -45,24 +49,69 @@ export class AdController {
   static async create(req: Request, res: Response) {
     try {
       const { adData, paymentIntentId } = req.body;
-      const isPaymentConfirmed = await paymentService.confirmPayment(paymentIntentId);
-      if (!isPaymentConfirmed) {
-        throw new Error("Payment not confirmed");
+      console.log("Request body:", req.body) 
+      // Check payment status directly from Stripe
+      const paymentStatus = await paymentService.checkPaymentStatus(paymentIntentId);
+      
+      if (paymentStatus !== 'succeeded') {
+        return res.status(400).json({ 
+          error: `Payment not completed. Status: ${paymentStatus}` 
+        });
       }
-      const ad = await createAdUseCase.execute(adData, paymentIntentId);
-      res.status(201).json({ message: "Ad created successfully", ad });
+      
+      // Create the ad without trying to confirm the payment again
+      const ad = await adRepository.createAd({
+        id: "",
+        advertiserId: adData.advertiserId,
+        title: adData.title,
+        description: adData.description,
+        imageUrl: adData.imageUrl,
+        placement: adData.placement,
+        price: adData.price,
+        status: "pending",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      res.status(201).json({ 
+        message: "Ad created successfully", 
+        ad,
+        paymentIntentId
+      });
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
+    }
+  } 
+   
+  static async deleteAd(req: Request, res: Response) {
+    try {
+      const { adId } = req.params;
+      await adRepository.deleteAd(adId);
+      res.status(200).json({ message: "Ad deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete ad" });
     }
   }
 
   static async getByAdvertiser(req: Request, res: Response) {
     try {
-      const { advertiserId } = req.params;
+      const { advertiserId } = req.params; 
+      console.log(advertiserId, "Advertiser ID backendil ethi");
       const ads = await adRepository.getAdsByAdvertiser(advertiserId);
+      console.log(ads, "Ads backendil ethi");
       res.json(ads);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch ads" });
+    }
+  } 
+
+  static async getActiveAds(req: Request, res: Response) {
+    try {
+      const ads = await adRepository.getActiveAds();
+      console.log("Active adseeeyeye", ads);
+      res.json(ads);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch active ads" });
     }
   }
 
@@ -80,13 +129,6 @@ export class AdController {
       if (!req.file) {
         return res.status(400).json({ error: "No image file provided" });
       }
-
-      console.log("File received:", {
-        filename: req.file.filename,
-        path: req.file.path,
-        size: req.file.size,
-        mimetype: req.file.mimetype
-      });
 
       // Make sure the file exists before uploading
       if (!fs.existsSync(req.file.path)) {
@@ -107,11 +149,6 @@ export class AdController {
           // Add some debugging options
           use_filename: true,
           unique_filename: true,
-        });
-
-        console.log("Cloudinary upload successful:", {
-          url: result.secure_url,
-          public_id: result.public_id
         });
 
         // Delete the local file after successful upload

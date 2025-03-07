@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { CreateAdDTO } from '../../types/ad';
+import { Ad, CreateAdDTO } from '../../types/ad';
 
 export interface StripePaymentIntent {
   clientSecret: string;
@@ -20,6 +20,7 @@ export const adApiSlice = createApi({
     },
     credentials: 'include',
   }),
+  tagTypes: ['Ads'],
   endpoints: (builder) => ({
     advertiserRegister: builder.mutation({
       query: (data) => ({
@@ -49,16 +50,20 @@ export const adApiSlice = createApi({
         body: data,
       }),
     }),
-    createAd: builder.mutation<any, { adData: CreateAdDTO, paymentIntentId: string }>({
-      query: ({ adData, paymentIntentId }) => ({
-        url: '/api/ads',
+    createAd: builder.mutation<
+    { message: string; ad: Ad; paymentIntentId: string },
+    { adData: CreateAdDTO; paymentIntentId: string }
+  >({
+    query: ({ adData, paymentIntentId }) => {
+      const body = { adData, paymentIntentId };
+      console.log("Sending body to /api/ads/create-ad:", body); // Debugging log
+      return {
+        url: '/api/ads/create-ad',
         method: 'POST',
-        body: {
-          ...adData,
-          paymentIntentId,
-        },
-      }),
-    }),
+        body,
+      };
+    },
+  }),
     uploadAdImage: builder.mutation<{ imageUrl: string }, FormData>({
       query: (formData) => ({
         url: '/api/ads/upload-image',
@@ -68,6 +73,19 @@ export const adApiSlice = createApi({
     }),
     getAdPricing: builder.query<Record<string, number>, void>({
       query: () => '/api/ads/ad-pricing',
+    }),
+    getAdsByAdvertiser: builder.query({
+      query: (advertiserId) => `/api/ads/${advertiserId}`,
+    }),
+    deleteAd: builder.mutation({
+      query: (adId) => ({
+        url: `/api/ads/delete-ad/${adId}`,
+        method: 'DELETE',
+      }),
+    }),
+    getActiveAds: builder.query<Ad[], void>({
+      query: () => '/api/ads/active-ads',
+      providesTags: ['Ads'],
     }),
   }),
 });
@@ -80,4 +98,7 @@ export const {
   useCreateAdMutation,
   useUploadAdImageMutation,
   useGetAdPricingQuery,
+  useGetAdsByAdvertiserQuery,
+  useDeleteAdMutation,
+  useGetActiveAdsQuery,
 } = adApiSlice;

@@ -67,7 +67,7 @@ const AdvertiserAccount = () => {
           </div>
           <div 
             className="flex items-center px-6 py-3 cursor-pointer hover:bg-indigo-700"
-            onClick={() => navigate('/advertiser/create-ad')}
+            onClick={() => navigate('/advertiser/create-new-ad')}
           >
             <FiPlus className="mr-3" />
             <span>Create New Ad</span>

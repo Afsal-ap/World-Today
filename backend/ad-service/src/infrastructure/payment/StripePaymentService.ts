@@ -1,15 +1,19 @@
-import Stripe from "stripe";
-import dotenv from "dotenv";
+import Stripe from 'stripe';
+import { IPaymentService } from '../../domain/services/IPaymentService';
 
-dotenv.config();
+export class StripePaymentService implements IPaymentService {
+  private stripe: Stripe;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2025-02-24.acacia" });
+  constructor() {
+    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2025-02-24.acacia', // Use the latest API version
+    });
+  }
 
-export class StripePaymentService {
-  async createPaymentIntent(amount: number, currency: string) {
+  async createPaymentIntent(amount: number, currency: string): Promise<{ clientSecret: string; paymentIntentId: string }> {
     try {
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount * 100,
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount: amount * 100, // Convert to cents
         currency,
         automatic_payment_methods: {
           enabled: true,
@@ -17,7 +21,7 @@ export class StripePaymentService {
       });
 
       return {
-        clientSecret: paymentIntent.client_secret,
+        clientSecret: paymentIntent.client_secret!,
         paymentIntentId: paymentIntent.id
       };
     } catch (error) {
@@ -25,28 +29,22 @@ export class StripePaymentService {
     }
   }
 
-  async processPayment(amount: number, currency: string, paymentMethodId: string) {
+  async confirmPayment(paymentIntentId: string): Promise<boolean> {
     try {
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount * 100,
-        currency,
-        payment_method: paymentMethodId,
-        confirm: true,
-        confirmation_method: 'manual',
-      });
-
-      return paymentIntent.status === 'succeeded';
-    } catch (error) {
-      throw new Error(`Payment processing failed: ${(error as Error).message}`);
-    }
-  }
-
-  async confirmPayment(paymentIntentId: string) {
-    try {
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
       return paymentIntent.status === 'succeeded';
     } catch (error) {
       throw new Error(`Payment confirmation failed: ${(error as Error).message}`);
+    }
+  }
+
+  // New method to check payment status
+  async checkPaymentStatus(paymentIntentId: string): Promise<string> {
+    try {
+      const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+      return paymentIntent.status;
+    } catch (error) {
+      throw new Error(`Failed to check payment status: ${(error as Error).message}`);
     }
   }
 }

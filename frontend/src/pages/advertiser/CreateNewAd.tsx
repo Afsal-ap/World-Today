@@ -1,28 +1,28 @@
 import React, { useState } from 'react';
-import { FiHome, FiPlus, FiLogOut, FiUser } from 'react-icons/fi';
-import { HiOutlineSpeakerphone } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { useCreatePaymentIntentMutation, useCreateAdMutation, useUploadAdImageMutation } from '../../store/slices/adApiSlice';
 import PaymentForm from '../../components/adComponents/PaymentForm';
+import { jwtDecode } from 'jwt-decode';
+import Sidebar from '../../components/adComponents/Sidebar';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
- 
- console.log(import.meta.env.VITE_STRIPE_PUBLIC_KEY,"keyyyyy");
+const stripePromise: Promise<Stripe | null> = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
+
 const CreateNewAd = () => {
   const navigate = useNavigate();
+  const advertiserToken = localStorage.getItem('advertiserToken');
   const [createPaymentIntent] = useCreatePaymentIntentMutation();
   const [createAd] = useCreateAdMutation();
   const [uploadImage] = useUploadAdImageMutation();
   const [clientSecret, setClientSecret] = useState<string>('');
-
+  const [paymentIntentId, setPaymentIntentId] = useState<string>('');
+  const [advertiserId, setAdvertiserId] = useState<string>('');
+  
   const [formData, setFormData] = useState({
-    advertiserId: 'user123',
     title: '',
     description: '',
-    placement: 'sidebar' as 'sidebar' | 'topbar' | 'popup',
-    targetUrl: '',
+    placement: 'popup' as 'popup' | 'card',
     imageUrl: '',
     price: 0,
     status: 'pending' as 'pending' | 'approved' | 'rejected',
@@ -51,109 +51,84 @@ const CreateNewAd = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
+   
+    if (!advertiserToken) {
+      navigate('/advertiser/login');
+    } else {
+      const decodedToken = jwtDecode<{ advertiserId: string }>(advertiserToken);
+      const advertiserId = decodedToken.advertiserId;
+      console.log(advertiserId, "Advertiser ID");
+      setAdvertiserId(advertiserId);
+    }
     try {
       if (!formData.imageFile) throw new Error("Image is required");
   
+      // 1. Upload image
       const imageFormData = new FormData();
       imageFormData.append("image", formData.imageFile);
       const { imageUrl } = await uploadImage(imageFormData).unwrap();
   
-      // Set image URL
-      setFormData((prev) => ({ ...prev, imageUrl }));
-  
-      const priceMap = { sidebar: 50, topbar: 100, popup: 150 };
+      // 2. Update formData with imageUrl and price
+      const priceMap = { popup: 150, card: 100 };
       const price = priceMap[formData.placement];
+      
+      const updatedFormData = {
+        ...formData,
+        imageUrl,
+        price
+      };
+      setFormData(updatedFormData);
   
-      // Create payment intent
+      // 3. Create payment intent
       const response = await createPaymentIntent({
         amount: price,
         placement: formData.placement,
       }).unwrap();
-  
-      // Ensure state updates properly
+     
+      // 4. Store client secret and payment intent ID
       setClientSecret(response.clientSecret);
+      setPaymentIntentId(response.paymentIntentId);
+      
+      // Now the form will be replaced with Stripe Elements
+      // After successful payment, handlePaymentSuccess will be called
     } catch (error) {
       console.error("Error:", error);
     }
   };
   
-
-  const handlePaymentSuccess = async (paymentIntentId: string) => {
+  const handlePaymentSuccess = async () => {
     try {
-      await createAd({
+      if (!paymentIntentId) {
+        console.error('Missing payment intent ID');
+        return;
+      }
+  
+      const createAdRequest = {
         adData: {
-          advertiserId: formData.advertiserId,
+          advertiserId: advertiserId,
           title: formData.title,
           description: formData.description,
           placement: formData.placement,
-          targetUrl: formData.targetUrl,
           imageUrl: formData.imageUrl,
           price: formData.price,
           status: formData.status
         },
-        paymentIntentId
-      }).unwrap();
-
+        paymentIntentId: paymentIntentId
+      };
+  
+      console.log("Calling createAd with:", createAdRequest); // Debugging log
+      const response = await createAd(createAdRequest).unwrap();
+      console.log(response, "Ad Created Successfully");
       navigate('/advertiser/my-ads');
     } catch (error) {
       console.error('Error creating ad:', error);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('advertiserToken');
-    localStorage.removeItem('advertiserRefreshToken');
-    navigate('/advertiser/login');
-  };
-
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-indigo-800 text-white">
-        <div className="p-6">
-          <h2 className="text-2xl font-bold">Ad Manager</h2>
-          <p className="text-indigo-200 text-sm">Advertiser Portal</p>
-        </div>
-        <nav className="mt-6">
-          <div 
-            className="flex items-center px-6 py-3 cursor-pointer hover:bg-indigo-700"
-            onClick={() => navigate('/advertiser/dashboard')}
-          >
-            <FiHome className="mr-3" />
-            <span>Overview</span>
-          </div>
-          <div 
-            className="flex items-center px-6 py-3 cursor-pointer hover:bg-indigo-700"
-            onClick={() => navigate('/advertiser/my-ads')}
-          >
-            <HiOutlineSpeakerphone className="mr-3" />
-            <span>My Ads</span>
-          </div>
-          <div 
-            className="flex items-center px-6 py-3 cursor-pointer bg-indigo-900"
-            onClick={() => navigate('/advertiser/create-ad')}
-          >
-            <FiPlus className="mr-3" />
-            <span>Create New Ad</span>
-          </div>
-          <div 
-            className="flex items-center px-6 py-3 cursor-pointer hover:bg-indigo-700"
-            onClick={() => navigate('/advertiser/account')}
-          >
-            <FiUser className="mr-3" />
-            <span>Account</span>
-          </div>
-          <div 
-            className="flex items-center px-6 py-3 cursor-pointer hover:bg-indigo-700 mt-auto"
-            onClick={handleLogout}
-          >
-            <FiLogOut className="mr-3" />
-            <span>Logout</span>
-          </div>
-        </nav>
-      </div>
-
+      <Sidebar activePage="createad" />
+      
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         <header className="bg-white shadow-sm">
@@ -205,9 +180,8 @@ const CreateNewAd = () => {
                       onChange={handleInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     >
-                      <option value="sidebar">Sidebar</option>
-                      <option value="topbar">Topbar</option>
                       <option value="popup">Popup</option>
+                      <option value="card">Card</option>
                     </select>
                   </div>
                   
@@ -221,19 +195,6 @@ const CreateNewAd = () => {
                       onChange={handleInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     ></textarea>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-700">Target URL</label>
-                    <input
-                      type="text"
-                      id="targetUrl"
-                      name="targetUrl"
-                      value={formData.targetUrl}
-                      onChange={handleInputChange}
-                      placeholder="e.g., https://example.com"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
                   </div>
                   
                   <div className="col-span-2">
@@ -259,7 +220,6 @@ const CreateNewAd = () => {
                       type="submit"
                       className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                      
                       Create Ad
                     </button>
                   </div>

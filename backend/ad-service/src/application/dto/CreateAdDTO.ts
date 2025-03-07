@@ -1,9 +1,12 @@
+
+import { AdPlacement } from "../../domain/types";
+
 export interface CreateAdDTO {
     advertiserId: string;
     title: string;
     description: string;
     imageUrl: string;
-    targetUrl: string;
-    placement: "sidebar" | "topbar" | "popup";
+    placement: AdPlacement;
+    status: "pending" | "approved" | "rejected"
   }
   

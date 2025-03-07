@@ -16,4 +16,16 @@ export class AdRepositoryImpl implements IAdRepository {
   async updateAdStatus(adId: string, status: string): Promise<void> {
     await AdModel.findByIdAndUpdate(adId, { status });
   }
+
+  async deleteAd(adId: string): Promise<void> {
+    await AdModel.findByIdAndDelete(adId);
+  }
+
+  async getActiveAds(): Promise<Ad[]> {
+    return await AdModel.find({ 
+       status: "pending",
+      //  startDate: { $lte: new Date() },
+      //  endDate: { $gte: new Date() }
+    }).lean() as Ad[];
+  }
 }

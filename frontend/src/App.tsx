@@ -34,7 +34,8 @@ import CreateNewAd from './pages/advertiser/CreateNewAd';
 import MyAds from './pages/advertiser/MyAds';
 import AdvertiserAccount from './pages/advertiser/AdvertiserAccount';
 import { ToastContainer } from 'react-toastify';
-
+import Weather from './components/layout/Weather';
+import SubscriptionPage from './pages/userPages/SubscriptionPage';
 
 function App() {
   return (    
@@ -47,6 +48,8 @@ function App() {
             <Route path="/post/:postId" element={<SinglePost />} />
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/live" element={<LiveWatch />} />
+            <Route path="/weather" element={<Weather />} />
+            <Route path="/subscribe" element={<SubscriptionPage />} />
           </Route>
     
           {/* Public Routes without Header */}

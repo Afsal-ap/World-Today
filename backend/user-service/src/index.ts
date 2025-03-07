@@ -40,7 +40,8 @@ import { RabbitMQService } from './infrastructure/services/rabbitMqService';
 import { UpdateCategoryUseCase } from './application/use-cases/admin/category-usecase'; 
 import { DeleteCategoryUseCase } from './application/use-cases/admin/category-usecase';
 import { GetSavePostUseCase } from './application/use-cases/getSavePost-usecase';
-        
+import subscriptionRoutes from './interfaces/routes/subscriptionRoutes';
+
 const app = express();   
 
 // Middleware
@@ -139,6 +140,8 @@ app.post('/auth/verify-otp', (req, res) => otpController.verifyOtp(req, res));
 app.use('/api/admin', setupAdminRoutes(adminController, userRepository));  
 app.use('/api/users', profileRoutes); 
 app.use('/api/users', setupUserRoutes(userController, savedPostRepository, profileController));
+app.use('/api/subscription', subscriptionRoutes);
+
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

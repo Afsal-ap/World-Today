@@ -3,7 +3,7 @@ import { StripePaymentService } from "../../infrastructure/payment/StripePayment
 import { CreateAdDTO } from "../dto/CreateAdDTO";
 import { Ad } from "../../domain/entities/Ad";
 
-type AdPlacement = "sidebar" | "topbar" | "popup";
+export type AdPlacement = "popup" | "card";
 
 export class CreateAdUseCase {
     constructor(
@@ -11,23 +11,22 @@ export class CreateAdUseCase {
         private paymentService: StripePaymentService
     ) {}
   
-    async execute(adData: CreateAdDTO, paymentMethod: string): Promise<Ad> {
+    async execute(adData: CreateAdDTO, paymentIntentId: string): Promise<Ad> {
         const priceMap: Record<AdPlacement, number> = {
-            sidebar: 50,
-            topbar: 100,
-            popup: 150
+            popup: 50,
+            card: 100,
+            
         };
   
         if (!priceMap[adData.placement as AdPlacement]) {
             throw new Error("Invalid ad placement.");
         }
   
-        // Process payment before ad creation
-        await this.paymentService.processPayment(
-            priceMap[adData.placement as AdPlacement],
-            "usd",
-            paymentMethod
-        );
+        // Confirm payment before ad creation
+        const isPaymentConfirmed = await this.paymentService.confirmPayment(paymentIntentId);
+        if (!isPaymentConfirmed) {
+            throw new Error("Payment not confirmed");
+        }
   
         const newAd = new Ad(
             "",
@@ -35,7 +34,6 @@ export class CreateAdUseCase {
             adData.title,
             adData.description,
             adData.imageUrl,
-            adData.targetUrl,
             adData.placement,
             priceMap[adData.placement as AdPlacement],
             "pending",

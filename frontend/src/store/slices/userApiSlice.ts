@@ -1,15 +1,13 @@
-// user 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { jwtDecode } from 'jwt-decode'; // Install with `npm install jwt-decode`
 
 interface User {
   id?: string;
   email?: string;
   name?: string;
   isBlocked?: boolean;
-  
-  // ... add other user properties
 }
- 
+
 interface ProfileResponseDto {
   id: string;
   name: string;
@@ -26,64 +24,60 @@ interface BaseQueryArgs {
   credentials?: RequestCredentials;
 }
 
-const baseQuery = fetchBaseQuery({ 
-  baseUrl: 'http://localhost:3000',  
+const baseQuery = fetchBaseQuery({
+  baseUrl: 'http://localhost:3000',
   credentials: 'include',
   prepareHeaders: (headers) => {
-      const token = localStorage.getItem('userToken');
-      if (token) {
-          headers.set('Authorization', `Bearer ${token}`);
-      } else {
-          headers.delete('Authorization'); // Ensure old headers are removed
-      }
-      return headers;
-  }
+    const token = localStorage.getItem('userToken');
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      headers.delete('Authorization');
+    }
+    return headers;
+  },
 });
 
 const baseQueryWithReauth = async (args: BaseQueryArgs, api: any, extraOptions: any) => {
-    let result = await baseQuery(args, api, extraOptions);
-    
-    if (result.error?.status === 401) {
-        // Try to refresh token
-        const refreshResult = await baseQuery(
-            { 
-                url: '/auth/refresh-token', 
-                method: 'POST',
-                credentials: 'include'
-            },
-            api,
-            extraOptions
-        );
-        
-        if (refreshResult.data) {
-            // Store the new token
-            localStorage.setItem('userToken', (refreshResult.data as { accessToken: string }).accessToken);
-            // Retry the original query with new token
-            result = await baseQuery(args, api, extraOptions);
-        } else {
-            // Refresh failed - logout
-            localStorage.removeItem('userToken');
-            localStorage.removeItem('refreshToken');
-            window.location.href = '/login';
-        }
+  let result = await baseQuery(args, api, extraOptions);
+
+  if (result.error?.status === 401) {
+    const refreshResult = await baseQuery(
+      {
+        url: '/auth/refresh-token',
+        method: 'POST',
+        credentials: 'include',
+      },
+      api,
+      extraOptions
+    );
+
+    if (refreshResult.data) {
+      localStorage.setItem('userToken', (refreshResult.data as { accessToken: string }).accessToken);
+      result = await baseQuery(args, api, extraOptions);
+    } else {
+      localStorage.removeItem('userToken');
+      localStorage.removeItem('refreshToken');
+      window.location.href = '/login';
     }
-    return result;
+  }
+  return result;
 };
 
 export const userApiSlice = createApi({
-  tagTypes: ['Profile', 'SavedPosts'],
+  tagTypes: ['Profile', 'SavedPosts', 'Subscription'],
   reducerPath: 'userApi',
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
+    // Existing endpoints...
     register: builder.mutation<{ success: boolean; data: any; message?: string }, any>({
       query: (userData) => ({
         url: '/auth/register',
         method: 'POST',
         body: {
           ...userData,
-          // Ensure phone number is properly formatted
-          phone: userData.phone.replace(/[^\d+]/g, '')
-        },    
+          phone: userData.phone.replace(/[^\d+]/g, ''),
+        },
       }),
       transformResponse: (response: any) => {
         console.log('Registration response:', response);
@@ -91,7 +85,7 @@ export const userApiSlice = createApi({
           return {
             success: true,
             data: response.data,
-            message: response.message
+            message: response.message,
           };
         }
         throw new Error(response.error || 'Registration failed');
@@ -100,23 +94,26 @@ export const userApiSlice = createApi({
         console.error('Registration error:', error);
         return {
           success: false,
-          error: error.data?.message || error.data?.error || 'Registration failed'
+          error: error.data?.message || error.data?.error || 'Registration failed',
         };
       },
     }),
-    login: builder.mutation<{ 
-      success: boolean; 
-      user: User; 
-      tokens: {
-        accessToken: string;
-        refreshToken: string;
-      }
-    }, any>({
+    login: builder.mutation<
+      {
+        success: boolean;
+        user: User;
+        tokens: {
+          accessToken: string;
+          refreshToken: string;
+        };
+      },
+      any
+    >({
       query: (credentials) => ({
         url: '/auth/login',
         method: 'POST',
         body: credentials,
-        credentials: 'include'
+        credentials: 'include',
       }),
       transformResponse: (response: any) => {
         if (response.success && response.user && response.tokens) {
@@ -135,11 +132,10 @@ export const userApiSlice = createApi({
         body: { phoneNumber: data.phoneNumber },
       }),
     }),
-    verifyOtp: builder.mutation<any, { 
-      phoneNumber: string; 
-      email: string; 
-      otp: string 
-    }>({
+    verifyOtp: builder.mutation<
+      any,
+      { phoneNumber: string; email: string; otp: string }
+    >({
       query: (data) => ({
         url: '/auth/verify-otp',
         method: 'POST',
@@ -157,32 +153,27 @@ export const userApiSlice = createApi({
         console.log('OTP Verification Error:', response);
         return {
           status: response.status,
-          data: response.data
+          data: response.data,
         };
-      }    
+      },
     }),
-    getProfile: builder.query<ProfileResponseDto, void>({  // Changed from User to ProfileResponseDto
+    getProfile: builder.query<ProfileResponseDto, void>({
       query: () => ({
         url: '/api/users/profile',
         method: 'GET',
-        credentials: 'include'
+        credentials: 'include',
       }),
       transformResponse: (response: any) => {
-        console.log('Raw profile response:', response); // Debug log
-        
-        // If response is in { status: 'success', data: {...} } format
+        console.log('Raw profile response:', response);
         if (response?.status === 'success' && response?.data) {
           return response.data;
         }
-        
-        // If response is direct profile data
         if (response?.id && response?.email) {
           return response;
         }
-    
         throw new Error('Invalid profile data format');
       },
-      providesTags: ['Profile']
+      providesTags: ['Profile'],
     }),
     updateProfile: builder.mutation<ProfileResponseDto, Partial<User>>({
       query: (data) => ({
@@ -202,16 +193,15 @@ export const userApiSlice = createApi({
         return {
           status: 'error',
           data: null,
-          message: error.data?.message || 'Failed to update profile'
+          message: error.data?.message || 'Failed to update profile',
         };
       },
       invalidatesTags: [{ type: 'Profile', id: 'LIST' }],
     }),
-    toggleSavePost: builder.mutation<any, { 
-      postId: string; 
-      method: 'POST' | 'DELETE';
-      postTitle?: string;
-    }>({
+    toggleSavePost: builder.mutation<
+      any,
+      { postId: string; method: 'POST' | 'DELETE'; postTitle?: string }
+    >({
       query: ({ postId, method, postTitle }) => ({
         url: '/api/users/posts/save',
         method: method,
@@ -229,21 +219,53 @@ export const userApiSlice = createApi({
       providesTags: ['SavedPosts'],
       transformResponse: (response: any) => {
         if (response?.status === 'success') {
-          return response.data; // Expecting array of post IDs
+          return response.data;
         }
         return [];
       },
     }),
+    // New endpoint for subscription status
+    getSubscriptionStatus: builder.query<{ isSubscribed: boolean }, void>({
+      query: () => {
+        const token = localStorage.getItem('userToken'); 
+       
+        if (!token) throw new Error('No token found');
+        const { email } = jwtDecode<{ email: string }>(token);
+        console.log(email, "email from userapislice")
+        return {
+          url: `/api/subscription/subscription-status?email=${email}`,
+          method: 'GET',
+          credentials: 'include',
+        };
+      },
+      transformResponse: (response: any) => {
+        console.log('Subscription status response:', response);
+        return { isSubscribed: response.isSubscribed || false };
+      },
+      providesTags: ['Subscription'],
+    }),
+    createSubscription: builder.mutation({
+      query: ({ userId, paymentMethodId }) => ({
+        url: '/api/subscription/create-subscription',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: { userId, paymentMethodId },
+      }),
+    }),
   }),
 });
 
-export const { 
-    useRegisterMutation, 
-    useLoginMutation,
-    useSendOtpMutation, 
-    useVerifyOtpMutation,
-    useGetProfileQuery,
-    useUpdateProfileMutation,
-    useToggleSavePostMutation,
-    useGetSavedPostsQuery,
+export const {
+  useRegisterMutation,
+  useLoginMutation,
+  useSendOtpMutation,
+  useVerifyOtpMutation,
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useToggleSavePostMutation,
+  useGetSavedPostsQuery,
+  useGetSubscriptionStatusQuery, 
+  useCreateSubscriptionMutation
 } = userApiSlice;
