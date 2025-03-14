@@ -1,9 +1,12 @@
+import { NullExpression } from "mongoose";
+
 export interface IUser {
     id?: string;
     email: string;
     password?: string;
     name: string;
     phone: string;
+    lastLogin?: Date | null;
     isAdmin?: boolean;
     isBlocked?: boolean;
     createdAt?: Date;
@@ -19,6 +22,7 @@ export class User implements IUser {
     password: string;
     name: string;
     phone: string;
+    lastLogin?: Date | null;
     isAdmin: boolean;
     isBlocked: boolean;
     createdAt?: Date;
@@ -33,6 +37,7 @@ export class User implements IUser {
         this.password = user.password || '';
         this.name = user.name;
         this.phone = user.phone;
+        this.lastLogin = user.lastLogin || null; 
         this.isAdmin = Boolean(user.isAdmin);
         this.isBlocked = Boolean(user.isBlocked);
         this.createdAt = user.createdAt || new Date();

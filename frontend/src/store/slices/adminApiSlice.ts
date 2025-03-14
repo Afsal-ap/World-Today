@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-export const adminApiSlice = createApi({
+export const adminApiSlice : any = createApi({
   reducerPath: 'adminApi',
   baseQuery: fetchBaseQuery({ 
     baseUrl: 'http://localhost:3000/api/',
@@ -23,8 +23,8 @@ export const adminApiSlice = createApi({
         body: credentials,
       }),
     }),
-    getDashboardStats: builder.query({
-      query: () => '/admin/dashboard/stats',
+    getUserStats: builder.query({
+      query: () => '/dashboard/getUserStats',
     }),
     getAllUsers: builder.query({
       query: ({ page = 1, limit = 10 }) => `/admin/users?page=${page}&limit=${limit}`,
@@ -104,8 +104,10 @@ export const adminApiSlice = createApi({
             body
         }),
         invalidatesTags: ['Category'],
-    })
-    
+    }),
+    getUserChart: builder.query({
+      query: (period) => `/dashboard/user-chart?period=${period}`,
+    }),
   }),
 });
 
@@ -119,4 +121,7 @@ export const {
   useCreateCategoryMutation,
   useDeleteCategoryMutation,
   useUpdateCategoryMutation,
+  useGetUserStatsQuery,
+  useGetUserChartQuery
+  
 } = adminApiSlice; 

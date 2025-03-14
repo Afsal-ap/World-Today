@@ -40,14 +40,14 @@ const UserLayout = ({ children }: { children: React.ReactNode }) => {
                 <>
                   <Link
                     to="/weather"
-                    className="text-gray-600 hover:text-purple-600 transition-colors duration-200"
+                    className="text-blue-800 hover:text-blue-600 transition-colors duration-200"
                     title="Weather"
                   >
                     <FaCloudSun className="w-7 h-7" />
                   </Link>
                   <Link
                     to="/profile"
-                    className="text-gray-600 hover:text-purple-600 transition-colors duration-200"
+                    className="text-blue-800 hover:text-blue-600 transition-colors duration-200"
                     title="Profile"
                   >
                     <FaUserCircle className="w-7 h-7" />

@@ -6,6 +6,7 @@ import connectToMongoDB from "./infrastructure/db/db-connection/mongoose.connect
 import { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import AdRoutes from "./interfaces/routes/AdRoutes";
+import AdminDashboardRoutes from './interfaces/routes/AdminDashboardRoutes.ts'
 // Load environment variables first
 dotenv.config();
 
@@ -40,6 +41,7 @@ if (missingEnvVars.length > 0) {
 // Routes
 app.use('/advertiser', AdvertiserAuthRoutes);
 app.use('/api/ads', AdRoutes);
+app.use('/api/dashboard',AdminDashboardRoutes)
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

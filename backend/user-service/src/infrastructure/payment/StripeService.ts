@@ -1,37 +1,39 @@
 import Stripe from 'stripe';
+import { IPaymentService } from '../../domain/services/payment-service';
 
-export class StripeService {
+export class StripeService implements IPaymentService {
   private stripe: Stripe;
 
   constructor() {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2023-10-16', // Use the latest API version or the one you're using
+    });
   }
 
-  async createCustomer(userId: string, paymentMethodId: string): Promise<Stripe.Customer> {
-    // Create customer without payment_method
+  async createCustomer(email: string, name: string): Promise<string> {
+    // Your existing implementation
     const customer = await this.stripe.customers.create({
-      metadata: { userId },
+      email,
+      name,
     });
-
-    // Attach payment method to the customer
-    await this.stripe.paymentMethods.attach(paymentMethodId, {
-      customer: customer.id,
-    });
-
-    // Set the attached payment method as the default
-    await this.stripe.customers.update(customer.id, {
-      invoice_settings: { default_payment_method: paymentMethodId },
-    });
-
-    return customer;
+    return customer.id;
   }
 
-  async createSubscription(customerId: string): Promise<Stripe.Subscription> {
-    return await this.stripe.subscriptions.create({
-      customer: customerId,
-      items: [{ price: 'price_1Qzz9eLJGKouWmFeYTfAWqkC' }], // Replace with your actual Price ID
-      expand: ['latest_invoice.payment_intent'],
-      payment_behavior: 'default_incomplete', // Ensures payment method is charged
-    });
+  async createSubscription(customerId: string, paymentMethodId: string): Promise<any> {
+    // Your existing implementation
+    // ...
+    return {}; // Replace with your actual implementation
   }
+
+  async isSubscriptionActive(subscriptionId: string): Promise<boolean> {
+    try {
+      const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
+      return subscription.status === 'active';
+    } catch (error) {
+      console.error('Error checking subscription status:', error);
+      return false;
+    }
+  }
+
+  // Other methods...
 }

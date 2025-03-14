@@ -309,6 +309,15 @@ export const postApiSlice = createApi({
       query: (roomId) => `/api/live/stream/${roomId}`,
       providesTags: (_result, _error, roomId) => [{ type: 'LiveStream', id: roomId }]
     }),
+    getChannels: builder.query<
+     any, { page?: number; limit?: number } >({
+      query: ({ page = 1, limit = 10 } = {}) => `/admin/channels?page=${page}&limit=${limit}`,
+      providesTags: ['Channel'],
+  }),
+  getChannelStats: builder.query({
+    query: () => '/api/dashboard/getChannelStats',
+  }),
+
   }),
 });
 
@@ -340,5 +349,7 @@ export const {
   useStartLiveStreamMutation,
   useStopLiveStreamMutation,
   useJoinLiveStreamMutation,
-  useGetLiveStreamDetailsQuery
+  useGetLiveStreamDetailsQuery,
+  useGetChannelsQuery,
+  useGetChannelStatsQuery
 } = postApiSlice;

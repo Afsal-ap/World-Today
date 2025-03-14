@@ -41,6 +41,7 @@ export class CompleteRegistrationUseCase {
                 email: createdUser.email,
                 name: createdUser.name,
                 phone: createdUser.phone,
+                lastLogin: user.lastLogin || null,
                 createdAt: createdUser.createdAt!,
                 isBlocked: false
             },

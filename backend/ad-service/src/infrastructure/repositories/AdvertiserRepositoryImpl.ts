@@ -1,5 +1,6 @@
 import { Advertiser } from "../../domain/entities/Advertiser";
 import { AdvertiserRepository } from "../../domain/repositories/AdvertiserRepository";
+import { AdModel } from "../db/models/AdModel";
 import AdvertiserModel from "../db/models/advertiserModel";
 
 export class AdvertiserRepositoryImpl implements AdvertiserRepository {
@@ -24,4 +25,24 @@ export class AdvertiserRepositoryImpl implements AdvertiserRepository {
         const newAdvertiser = new AdvertiserModel(advertiser);
         await newAdvertiser.save();
     }
-} 
+    async count(): Promise<{ totalAdvertisers: number; totalAds: number; adRevenue: number }> {
+        const totalAds = await AdModel.countDocuments().exec();
+        const totalAdvertisers = await AdvertiserModel.countDocuments().exec(); 
+    
+        const adRevenueResult = await AdModel.aggregate([
+            { $match: { status: "pending" } }, // Consider only approved ads
+            { $group: { _id: null, totalRevenue: { $sum: "$price" } } } // Sum up the price
+        ]);
+      console.log(adRevenueResult, "amount");
+      
+        // Extract totalRevenue or default to 0 if no ads exist
+        const adRevenue = adRevenueResult.length > 0 ? adRevenueResult[0].totalRevenue : 0;
+    
+        return {
+            totalAds,
+            totalAdvertisers,
+            adRevenue
+        };
+    }
+    
+}

@@ -6,4 +6,6 @@ export interface AdvertiserRepository {
     findById(advertiserId: string): Promise<Advertiser | null>;
     updateAdvertiser(advertiserId: string, advertiser: Partial<Advertiser>): Promise<void>;
     save(advertiser: Partial<Advertiser>): Promise<void>;
+    count(): Promise<{totalAdvertisers:number;totalAds:number;adRevenue:number}>;
+
 } 

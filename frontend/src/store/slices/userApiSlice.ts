@@ -228,12 +228,16 @@ export const userApiSlice = createApi({
     getSubscriptionStatus: builder.query<{ isSubscribed: boolean }, void>({
       query: () => {
         const token = localStorage.getItem('userToken'); 
-       
+        
         if (!token) throw new Error('No token found');
-        const { email } = jwtDecode<{ email: string }>(token);
-        console.log(email, "email from userapislice")
+        const decoded = jwtDecode<{ userId: string }>(token);
+        const userId = decoded.userId;
+        
+        if (!userId) throw new Error('No user ID found in token');
+        console.log(userId, "userId from userApiSlice");
+        
         return {
-          url: `/api/subscription/subscription-status?email=${email}`,
+          url: `/api/subscription/subscription-status?userId=${userId}`,
           method: 'GET',
           credentials: 'include',
         };
@@ -254,6 +258,7 @@ export const userApiSlice = createApi({
         body: { userId, paymentMethodId },
       }),
     }),
+   
   }),
 });
 
@@ -267,5 +272,6 @@ export const {
   useToggleSavePostMutation,
   useGetSavedPostsQuery,
   useGetSubscriptionStatusQuery, 
-  useCreateSubscriptionMutation
+  useCreateSubscriptionMutation,
+  
 } = userApiSlice;

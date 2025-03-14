@@ -40,7 +40,11 @@ import { RabbitMQService } from './infrastructure/services/rabbitMqService';
 import { UpdateCategoryUseCase } from './application/use-cases/admin/category-usecase'; 
 import { DeleteCategoryUseCase } from './application/use-cases/admin/category-usecase';
 import { GetSavePostUseCase } from './application/use-cases/getSavePost-usecase';
-import subscriptionRoutes from './interfaces/routes/subscriptionRoutes';
+import dashboarRoutes  from './interfaces/routes/dashboarRoutes'
+// import subscriptionRoutes from './interfaces/routes/subscriptionRoutes';
+import Stripe from 'stripe';
+import bodyParser from 'body-parser'
+
 
 const app = express();   
 
@@ -112,6 +116,36 @@ const adminController = new AdminController(
   updateCategoryUseCase,
   deleteCategoryUseCase
 );
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const router = express.Router();
+
+
+router.post('/webhook', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+
+  try {    
+      const event = stripe.webhooks.constructEvent(req.body, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
+
+      if (event.type === 'invoice.payment_succeeded') {
+          const invoice = event.data.object as Stripe.Invoice;
+          const subscriptionId = invoice.subscription as string;
+
+          // TODO: Update your database subscription status to "active"
+          console.log(`Subscription ${subscriptionId} is now active`);
+          await userRepository.update(subscriptionId, { subscriptionStatus: 'active' });
+
+      }
+
+      res.status(200).send('Webhook received');
+  } catch (err) {
+      console.error('Webhook Error:', err);
+      res.status(400).send('Webhook Error');
+  }
+});
+
+
+
+
 
 const PORT = process.env.PORT || 3001;
 
@@ -140,7 +174,8 @@ app.post('/auth/verify-otp', (req, res) => otpController.verifyOtp(req, res));
 app.use('/api/admin', setupAdminRoutes(adminController, userRepository));  
 app.use('/api/users', profileRoutes); 
 app.use('/api/users', setupUserRoutes(userController, savedPostRepository, profileController));
-app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/dashboard',dashboarRoutes)
+// app.use('/api/subscription', subscriptionRoutes);
 
 
 // Error handling middleware

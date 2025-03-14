@@ -19,6 +19,7 @@ const UserSchema = new mongoose.Schema({
     password: { type: String },
     name: { type: String, required: true },
     phone: { type: String, required: true },
+    lastLogin: { type: Date, default: null },
     isAdmin: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },

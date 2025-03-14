@@ -23,6 +23,7 @@ export interface UserResponseDto {
     email: string;
     name: string;
     phone: string;
+    lastLogin: Date | null
     createdAt: Date;
     isBlocked: boolean;
 }

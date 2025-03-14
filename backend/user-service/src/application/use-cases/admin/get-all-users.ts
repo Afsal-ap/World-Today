@@ -6,8 +6,8 @@ export class GetAllUsersUseCase {
     async execute(page: number = 1, limit: number = 10) {
         const skip = (page - 1) * limit;
         const users = await this.userRepository.findAll(skip, limit);
-        const total = await this.userRepository.count();
-        const totalPages = Math.ceil(total / limit);
+        const { totalUsers } = await this.userRepository.count();  // Destructure totalUsers
+        const totalPages = Math.ceil(totalUsers / limit);  // Use totalUsers instead of total
           
         return {
             status: 'success',
@@ -15,9 +15,8 @@ export class GetAllUsersUseCase {
                 users,
                 currentPage: page, 
                 totalPages,
-                total
+                total: totalUsers  // Return totalUsers instead of total
             }
         };
     }
-} 
-
+}

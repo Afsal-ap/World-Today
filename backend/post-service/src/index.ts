@@ -16,6 +16,8 @@ import liveRoutes from './interfaces/routes/liveRoutes';
 import http from 'http';
 import { Server } from "socket.io";
 import { LiveService } from './live/live.service';
+import AdminDashboardRoutes from './interfaces/routes/AdminDashboardRoutes'
+
 
 // Load environment variables
 dotenv.config();
@@ -46,6 +48,7 @@ app.use('/auth', ChannelAuthRoutes);
 app.use('/api/channel/dashboard', ChannelDashboardRoutes);
 app.use('/api/posts/admin', adminRoutes);
 app.use('/api/live', liveRoutes);
+app.use('/api/dashboard',AdminDashboardRoutes)
 
 // Static file serving
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));

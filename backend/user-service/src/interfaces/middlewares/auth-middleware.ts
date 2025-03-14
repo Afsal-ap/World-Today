@@ -11,7 +11,7 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
-       res.status(401).json({ message: 'No token provided' });
+       res.status(400).json({ message: 'No token provided' });
        return 
     }
 
@@ -56,3 +56,5 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
      return
   }
 };
+
+

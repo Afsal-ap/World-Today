@@ -73,9 +73,16 @@ const Home = () => {
     skip: page === 0,
   });
 
-  const { data: subscriptionData, isLoading: subLoading } = useGetSubscriptionStatusQuery(undefined, {
+  const { data: subscriptionData, isLoading: subLoading, error: subError } = useGetSubscriptionStatusQuery(undefined, {
     skip: !userToken,
   });
+
+  useEffect(() => {
+    if (subError) {
+      console.error('Subscription status error:', subError);
+    }
+  }, [subError]);
+
   const isSubscribed = subscriptionData?.isSubscribed || false;
 
   const { 
@@ -181,6 +188,12 @@ const Home = () => {
       setFilteredPosts(contentItems.filter(post => 'category' in post && post.category === selectedCategory));
     }
   }, [selectedCategory, contentItems]);
+
+  useEffect(() => {
+    if (!subLoading && subscriptionData) {
+      console.log('Subscription status:', isSubscribed ? 'Subscribed' : 'Not subscribed');
+    }
+  }, [subscriptionData, subLoading, isSubscribed]);
 
   const filterPostsByCategory = (category: string) => {
     setSelectedCategory(category);

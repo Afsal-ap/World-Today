@@ -15,7 +15,7 @@ export const setupAdminRoutes = (
   adminRouter.post('/create-category', adminAuth, (req, res) => adminController.createCategory(req, res));
   adminRouter.get('/categories', adminAuth, (req, res) => adminController.getCategories(req, res));
   adminRouter.delete('/categories/:id', adminAuth, (req, res) => adminController.deleteCategory(req, res));
-  adminRouter.get('/users', adminAuth, (req, res) => adminController.getAllUsers(req, res));
+  // adminRouter.get('/users', adminAuth, (req, res) => adminController.getAllUsers(req, res));
   adminRouter.patch('/users/:userId/status', adminAuth, (req, res) => adminController.updateUserStatus(req, res));
   adminRouter.patch('/users/:userId/block', adminAuth, (req, res) => adminController.updateUserBlockStatus(req, res));
   adminRouter.put('/categories/:id', adminController.updateCategory.bind(adminController));

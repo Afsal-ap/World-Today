@@ -22,25 +22,25 @@ export class AdminController {
         private readonly deleteCategoryUseCase: DeleteCategoryUseCase
     ) {}
 
-    async getAllUsers(req: Request, res: Response): Promise<void> {
-        try {
-            const page = parseInt(req.query.page as string) || 1;
-            const limit = parseInt(req.query.limit as string) || 10;
-            console.log('Fetching users with page:', page, 'limit:', limit);
+    // async getAllUsers(req: Request, res: Response): Promise<void> {
+    //     try {
+    //         const page = parseInt(req.query.page as string) || 1;
+    //         const limit = parseInt(req.query.limit as string) || 10;
+    //         console.log('Fetching users with page:', page, 'limit:', limit);
             
-            const result = await this.getAllUsersUseCase.execute(page, limit);
-            console.log('Users fetched successfully:', result);
+    //         const result = await this.getAllUsersUseCase.execute(page, limit);
+    //         console.log('Users fetched successfully:', result);
             
-            res.status(200).json(result);
-        } catch (error: any) {
-            console.error('Error in getAllUsers:', error);
-            res.status(500).json({ 
-                status: 'error',
-                message: error.message || 'Internal server error',
-                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-            });
-        }
-    }
+    //         res.status(200).json(result);
+    //     } catch (error: any) {
+    //         console.error('Error in getAllUsers:', error);
+    //         res.status(500).json({ 
+    //             status: 'error',
+    //             message: error.message || 'Internal server error',
+    //             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    //         });
+    //     }
+    // }
 
     async updateUserStatus(req: Request, res: Response): Promise<void> {
         try {

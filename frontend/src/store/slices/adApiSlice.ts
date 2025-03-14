@@ -87,6 +87,9 @@ export const adApiSlice = createApi({
       query: () => '/api/ads/active-ads',
       providesTags: ['Ads'],
     }),
+    getAdvertiserStats: builder.query({
+      query: () => '/api/dashboard/getAdvertiserStats',
+    }),
   }),
 });
 
@@ -101,4 +104,5 @@ export const {
   useGetAdsByAdvertiserQuery,
   useDeleteAdMutation,
   useGetActiveAdsQuery,
+  useGetAdvertiserStatsQuery
 } = adApiSlice;

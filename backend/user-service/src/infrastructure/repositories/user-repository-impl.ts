@@ -9,6 +9,7 @@ export class UserRepositoryImpl implements IUserRepository {
             password: user.password,
             name: user.name,
             phone: user.phone,
+            lastLogin: user.lastLogin,
             isAdmin: user.isAdmin,
             isBlocked: user.isBlocked,
             stripeCustomerId: user.stripeCustomerId,
@@ -22,6 +23,7 @@ export class UserRepositoryImpl implements IUserRepository {
             password: newUser.password || undefined,
             name: newUser.name,
             phone: newUser.phone,
+            lastLogin: newUser.lastLogin,
             isAdmin: newUser.isAdmin,
             isBlocked: newUser.isBlocked,
             createdAt: newUser.createdAt,
@@ -34,10 +36,7 @@ export class UserRepositoryImpl implements IUserRepository {
 
     async findByEmail(email: string): Promise<User | null> {
         const userDoc = await UserModel.findOne({ email }).exec();
-
-        if (!userDoc) {
-            return null;
-        }
+        if (!userDoc) return null;
 
         return new User({
             id: userDoc._id.toString(),
@@ -45,6 +44,7 @@ export class UserRepositoryImpl implements IUserRepository {
             password: userDoc.password || undefined,
             name: userDoc.name,
             phone: userDoc.phone,
+            lastLogin: userDoc.lastLogin,
             isAdmin: userDoc.isAdmin,
             isBlocked: userDoc.isBlocked,
             createdAt: userDoc.createdAt,
@@ -65,6 +65,7 @@ export class UserRepositoryImpl implements IUserRepository {
             password: userDoc.password || undefined,
             name: userDoc.name,
             phone: userDoc.phone,
+            lastLogin: userDoc.lastLogin,
             isAdmin: userDoc.isAdmin,
             isBlocked: userDoc.isBlocked,
             createdAt: userDoc.createdAt,
@@ -89,12 +90,13 @@ export class UserRepositoryImpl implements IUserRepository {
                 email: user.email,
                 name: user.name,
                 phone: user.phone,
+                lastLogin: user.lastLogin,
                 isAdmin: user.isAdmin,
                 isBlocked: user.isBlocked,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt,
                 stripeCustomerId: user.stripeCustomerId || undefined,
-                subscriptionId: user.subscriptionId || undefined,    
+                subscriptionId: user.subscriptionId || undefined,
                 subscriptionStatus: user.subscriptionStatus,
                 password: undefined, // Explicitly set to undefined since excluded
             }));
@@ -104,8 +106,28 @@ export class UserRepositoryImpl implements IUserRepository {
         }
     }
 
-    async count(): Promise<number> {
-        return await UserModel.countDocuments().exec();
+    async count(): Promise<{ totalUsers: number; activeUsers: number }> {
+        const totalUsers = await UserModel.countDocuments();
+        const activeUsers = await UserModel.countDocuments({
+            lastLogin: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        });
+
+        return { totalUsers, activeUsers };
+    }
+    
+    async getActiveUsers(period: "daily" | "weekly"): Promise<{ _id: any; count: number }[]> {
+        const groupBy = period === "daily" 
+            ? { $dateToString: { format: "%Y-%m-%d", date: "$lastLogin" } } 
+            : { $isoWeek: "$lastLogin" };
+
+        const activeUsers = await UserModel.aggregate([
+            { $match: { lastLogin: { $exists: true } } }, 
+            { $group: { _id: groupBy, uniqueUsers: { $addToSet: "$_id" } } },
+            { $project: { _id: 1, count: { $size: "$uniqueUsers" } } }, 
+            { $sort: { _id: 1 } } // Sort by date
+        ]);
+
+        return activeUsers;
     }
 
     async updateUserStatus(userId: string, isAdmin: boolean): Promise<void> {
@@ -147,6 +169,7 @@ export class UserRepositoryImpl implements IUserRepository {
             password: updatedUser.password || undefined,
             name: updatedUser.name,
             phone: updatedUser.phone,
+            lastLogin: updatedUser.lastLogin,
             isAdmin: updatedUser.isAdmin,
             isBlocked: updatedUser.isBlocked,
             createdAt: updatedUser.createdAt,
@@ -155,5 +178,5 @@ export class UserRepositoryImpl implements IUserRepository {
             subscriptionId: updatedUser.subscriptionId || undefined,
             subscriptionStatus: updatedUser.subscriptionStatus,
         });
-    }
+    } 
 }

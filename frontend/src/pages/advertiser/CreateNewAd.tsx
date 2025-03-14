@@ -85,12 +85,10 @@ const CreateNewAd = () => {
         placement: formData.placement,
       }).unwrap();
      
-      // 4. Store client secret and payment intent ID
       setClientSecret(response.clientSecret);
       setPaymentIntentId(response.paymentIntentId);
       
-      // Now the form will be replaced with Stripe Elements
-      // After successful payment, handlePaymentSuccess will be called
+      
     } catch (error) {
       console.error("Error:", error);
     }

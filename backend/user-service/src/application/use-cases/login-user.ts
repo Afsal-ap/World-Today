@@ -10,18 +10,18 @@ export class LoginUserUseCase {
 
     async execute(credentials: { email: string; password: string }): Promise<AuthResponseDto> {
         console.log('👤 Login attempt for:', credentials.email);
-
+    
         // Find user by email
         const user = await this.userRepository.findByEmail(credentials.email);
         if (!user) {
             console.log('❌ User not found:', credentials.email);
             throw new Error('Invalid email or password');
         }
-
+    
         if (user.isBlocked) {
             throw new Error('Your account has been blocked. Please contact support.');
         }
-
+    
         // Verify password
         const isPasswordValid = await this.authService.comparePassword(
             credentials.password,
@@ -32,15 +32,19 @@ export class LoginUserUseCase {
             email: credentials.email, 
             isValid: isPasswordValid 
         });
-
+    
         if (!isPasswordValid) {
             throw new Error('Invalid email or password');
-        }
-
+        } 
+    
+        // Update lastLogin in the database
+        
+        user.lastLogin = new Date();
+        await this.userRepository.update(user.id!, { lastLogin: user.lastLogin });
         // Generate tokens
         const tokens = await this.authService.generateTokens(user.id!);
-       console.log(user.id,"user iddid ");
-       
+        console.log(user.id, "user id");
+    
         // Return response
         return {
             user: {
@@ -48,6 +52,7 @@ export class LoginUserUseCase {
                 email: user.email,
                 name: user.name,
                 phone: user.phone,
+                lastLogin: user.lastLogin,
                 createdAt: user.createdAt!,
                 isBlocked: user.isBlocked 
             },
@@ -57,4 +62,4 @@ export class LoginUserUseCase {
             }
         };
     }
-}
+    }
