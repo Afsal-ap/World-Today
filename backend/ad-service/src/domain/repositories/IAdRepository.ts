@@ -6,4 +6,5 @@ export interface IAdRepository {
   updateAdStatus(adId: string, status: string): Promise<void>;
   getActiveAds(): Promise<Ad[]>;
   deleteAd(adId: string): Promise<void>;
+
 }

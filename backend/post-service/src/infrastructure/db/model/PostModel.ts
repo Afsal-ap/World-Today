@@ -43,6 +43,6 @@ postSchema.virtual('channel', {
   localField: 'channelId',
   foreignField: '_id',
   justOne: true
-});
+}); 
 
 export const PostModel = mongoose.model<IPostDocument>('Post', postSchema);

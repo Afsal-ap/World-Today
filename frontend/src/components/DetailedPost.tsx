@@ -3,19 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGetPostQuery, useCreateCommentMutation, useGetPostCommentsQuery, useDeleteCommentMutation, useUpdateCommentMutation } from '../store/slices/postApiSlice';
 import { FiEdit, FiTrash } from 'react-icons/fi';
 
-interface post {
-  id: string;
-  title: string;
-  content: string;
-  mediaUrl: string;
-  mediaType: 'image' | 'video' | null;
-  category: string;
-  createdAt: string;
-  channelName: string;
-  comments: Comment[];
-  likes?: number;
-  isLiked?: boolean;
-}
+
 
 interface Comment {
   _id: string;
@@ -35,7 +23,6 @@ function DetailedPost() {
   const channelToken = localStorage.getItem('channelToken');
   const userToken = localStorage.getItem('userToken');
   const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(post?.likes || 0);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editedComment, setEditedComment] = useState('');
   const [deleteComment] = useDeleteCommentMutation();
@@ -47,9 +34,6 @@ function DetailedPost() {
     }
   }, [error]);
 
-  console.log('Post data:', post);
-  console.log('Error:', error);
-
   const decodeToken = (token: string): any | null => {
     try {
       const payload = token.split('.')[1];
@@ -60,7 +44,7 @@ function DetailedPost() {
       return null;
     }
   };
- console.log(comments,"commentukalee")
+
   const handleSubmitComment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!comment.trim()) return;
@@ -73,8 +57,7 @@ function DetailedPost() {
 
       const decodedToken = decodeToken(userToken);
       const userId = decodedToken?.userId;
-      
- 
+
       if (!userId) {
         throw new Error('User ID not found in token');
       }
@@ -95,7 +78,6 @@ function DetailedPost() {
     try {
       if (!post) return;
 
-      // Get userId from decoded token
       const decodedToken = decodeToken(userToken!);
       const userId = decodedToken?.userId;
 
@@ -117,11 +99,8 @@ function DetailedPost() {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to toggle like');
       }
-      
-      const data = await response.json();
+
       setLiked(!liked);
-      setLikesCount(data.likesCount);
-      
     } catch (error) {
       console.error('Error toggling like:', error);
     }
@@ -147,7 +126,6 @@ function DetailedPost() {
   };
 
   const handleSaveEdit = async (commentId: string) => { 
-    console.log(commentId,"comment id ")
     try {
       await updateComment({
         postId: postId!,
@@ -176,7 +154,6 @@ function DetailedPost() {
     );
   }
   if (!post) return <div className="text-center p-8">Post not found</div>;
-
   return (
     <div className="max-w-7xl mx-auto p-4">
       <button

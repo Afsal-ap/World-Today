@@ -28,4 +28,32 @@ export class AdRepositoryImpl implements IAdRepository {
       //  endDate: { $gte: new Date() }
     }).lean() as Ad[];
   }
+
+  
+  async getAdCountsByDate(period: 'daily' | 'weekly'): Promise<{ date: string; count: number }[]> {
+    try {
+      let dateFormat = "%Y-%m-%d"; // Default: Daily
+      if (period === "weekly") {
+        dateFormat = "%Y-%U"; // Weekly (Year-Week Number)
+      }
+  
+      const adCounts = await AdModel.aggregate([
+        {
+          $group: {
+            _id: { $dateToString: { format: dateFormat, date: "$createdAt" } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]);
+  
+      return adCounts.map(item => ({
+        date: item._id,
+        count: item.count
+      }));
+    } catch (error) {
+      console.error("Error fetching post counts:", error);
+      throw new Error("Failed to fetch post counts by date");
+    }
+  }
 }

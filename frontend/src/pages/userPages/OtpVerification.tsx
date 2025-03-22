@@ -61,7 +61,7 @@ const OtpVerification = () => {
 
     const handleResendOtp = async () => {
         try {
-            await resendOtp({ phoneNumber, email }).unwrap();
+            await resendOtp({ phoneNumber }).unwrap();
             setTimer(30);
             setCanResend(false);
         } catch (error) {

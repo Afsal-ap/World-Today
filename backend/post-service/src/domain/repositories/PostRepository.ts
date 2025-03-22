@@ -6,4 +6,11 @@ export interface PostRepository {
   findAll(query?: any): Promise<Post[]>;
   findByIds(ids: string[]): Promise<Post[]>;
   findPostsByIds(postIds: string[]): Promise<any[]>;
-} 
+  getPostCountsByDate(period: 'daily' | 'weekly'): Promise<{ date: string; count: number }[]> 
+  getChannelStats(channelId: string, period: 'daily' | 'weekly'): Promise<{
+    totalPosts: number;
+    totalLikes: number;
+    totalComments: number;
+    postCounts?: { date: string; count: number }[];
+  }>;
+}

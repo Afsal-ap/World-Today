@@ -1,80 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { FiHome, FiPieChart, FiDollarSign, FiSettings, FiLogOut, FiPlus, FiEdit, FiTrash2, FiEye, FiUser } from 'react-icons/fi';
-import { HiOutlineDocumentReport, HiOutlineSpeakerphone } from 'react-icons/hi';
+import { useState } from 'react';
+import { FiHome, FiPieChart, FiDollarSign, FiLogOut, FiPlus, FiUser } from 'react-icons/fi';
+import { HiOutlineSpeakerphone } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 
 const AdvertiserDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
-  const [campaigns, setCampaigns] = useState([
-    { 
-      id: 1, 
-      name: 'Summer Sale Promotion', 
-      status: 'active', 
-      budget: 5000, 
-      spent: 2340, 
-      impressions: 45600, 
-      clicks: 1230, 
-      ctr: 2.7,
-      startDate: '2023-06-01',
-      endDate: '2023-08-31'
-    },
-    { 
-      id: 2, 
-      name: 'New Product Launch', 
-      status: 'pending', 
-      budget: 3000, 
-      spent: 0, 
-      impressions: 0, 
-      clicks: 0, 
-      ctr: 0,
-      startDate: '2023-09-15',
-      endDate: '2023-10-15'
-    },
-    { 
-      id: 3, 
-      name: 'Holiday Special', 
-      status: 'draft', 
-      budget: 7500, 
-      spent: 0, 
-      impressions: 0, 
-      clicks: 0, 
-      ctr: 0,
-      startDate: '2023-11-20',
-      endDate: '2023-12-31'
-    }
-  ]);
-
-  // Mock data for charts and metrics
-  const metrics = {
-    totalBudget: 15500,
-    totalSpent: 2340,
-    totalImpressions: 45600,
-    totalClicks: 1230,
-    averageCTR: 2.7,
-    revenueGenerated: 8750
-  };
-
-  const recentActivity = [
-    { id: 1, action: 'Campaign created', campaign: 'Holiday Special', date: '2023-08-10 14:23' },
-    { id: 2, action: 'Budget increased', campaign: 'Summer Sale Promotion', date: '2023-08-08 09:45' },
-    { id: 3, action: 'Campaign scheduled', campaign: 'New Product Launch', date: '2023-08-05 16:30' }
-  ];
 
   const handleLogout = () => {
     localStorage.removeItem('advertiserToken');
     localStorage.removeItem('advertiserRefreshToken');
     navigate('/advertiser/login');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
   };
 
   const handleNavigation = (tab: string) => {
@@ -165,7 +101,7 @@ const AdvertiserDashboard = () => {
                     <h3 className="text-gray-500 text-sm font-medium">Total Budget</h3>
                     <FiDollarSign className="h-5 w-5 text-gray-400" />
                   </div>
-                  <p className="text-2xl font-semibold text-gray-900 mt-2">${metrics.totalBudget.toLocaleString()}</p>
+                  <p className="text-2xl font-semibold text-gray-900 mt-2">$15,500</p>
                   <div className="mt-2 text-sm text-gray-600">
                     <span className="text-green-600 font-medium">+5.2%</span> from last month
                   </div>
@@ -176,7 +112,7 @@ const AdvertiserDashboard = () => {
                     <h3 className="text-gray-500 text-sm font-medium">Total Spent</h3>
                     <FiDollarSign className="h-5 w-5 text-gray-400" />
                   </div>
-                  <p className="text-2xl font-semibold text-gray-900 mt-2">${metrics.totalSpent.toLocaleString()}</p>
+                  <p className="text-2xl font-semibold text-gray-900 mt-2">$2,340</p>
                   <div className="mt-2 text-sm text-gray-600">
                     <span className="text-green-600 font-medium">+12.3%</span> from last month
                   </div>
@@ -187,68 +123,10 @@ const AdvertiserDashboard = () => {
                     <h3 className="text-gray-500 text-sm font-medium">Total Impressions</h3>
                     <FiPieChart className="h-5 w-5 text-gray-400" />
                   </div>
-                  <p className="text-2xl font-semibold text-gray-900 mt-2">{metrics.totalImpressions.toLocaleString()}</p>
+                  <p className="text-2xl font-semibold text-gray-900 mt-2">45,600</p>
                   <div className="mt-2 text-sm text-gray-600">
                     <span className="text-green-600 font-medium">+8.1%</span> from last month
                   </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-gray-500 text-sm font-medium">Total Clicks</h3>
-                    <FiPieChart className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <p className="text-2xl font-semibold text-gray-900 mt-2">{metrics.totalClicks.toLocaleString()}</p>
-                  <div className="mt-2 text-sm text-gray-600">
-                    <span className="text-green-600 font-medium">+3.7%</span> from last month
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-gray-500 text-sm font-medium">Average CTR</h3>
-                    <FiPieChart className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <p className="text-2xl font-semibold text-gray-900 mt-2">{metrics.averageCTR}%</p>
-                  <div className="mt-2 text-sm text-gray-600">
-                    <span className="text-red-600 font-medium">-0.5%</span> from last month
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-gray-500 text-sm font-medium">Revenue Generated</h3>
-                    <FiDollarSign className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <p className="text-2xl font-semibold text-gray-900 mt-2">${metrics.revenueGenerated.toLocaleString()}</p>
-                  <div className="mt-2 text-sm text-gray-600">
-                    <span className="text-green-600 font-medium">+15.3%</span> from last month
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              <div className="bg-white rounded-lg shadow mb-6">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900">Recent Activity</h3>
-                </div>
-                <div className="divide-y divide-gray-200">
-                  {recentActivity.map((activity) => (
-                    <div key={activity.id} className="px-6 py-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                          <p className="text-sm text-gray-500">Campaign: {activity.campaign}</p>
-                        </div>
-                        <p className="text-sm text-gray-500">{activity.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="px-6 py-4 border-t border-gray-200">
-                  <a href="#" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                    View all activity
-                  </a>
                 </div>
               </div>
 

@@ -10,7 +10,7 @@ export const adApiSlice = createApi({
   reducerPath: 'adApi',
   baseQuery: fetchBaseQuery({ 
     baseUrl: 'http://localhost:3002',
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: (headers, ) => {
       // Get token from localStorage
       const token = localStorage.getItem('advertiserToken');
       if (token) {
@@ -90,6 +90,14 @@ export const adApiSlice = createApi({
     getAdvertiserStats: builder.query({
       query: () => '/api/dashboard/getAdvertiserStats',
     }),
+    getAdChart: builder.query({
+      query: (period = 'daily') => `/api/dashboard/getAdChart?period=${period}`,
+      transformResponse: (response: any) => {
+        console.log('Chart response:', response);
+        return response?.data || [];
+      },
+      providesTags: ['Ads'],
+    }),
   }),
 });
 
@@ -104,5 +112,7 @@ export const {
   useGetAdsByAdvertiserQuery,
   useDeleteAdMutation,
   useGetActiveAdsQuery,
-  useGetAdvertiserStatsQuery
+  useGetAdvertiserStatsQuery,
+  useGetAdChartQuery
+  
 } = adApiSlice;

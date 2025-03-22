@@ -1,11 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaRegComment } from 'react-icons/fa';
-import { useToggleSavePostMutation, useGetSubscriptionStatusQuery } from '../../store/slices/userApiSlice';
+import { useGetSubscriptionStatusQuery } from '../../store/slices/userApiSlice';
 import { useGetPostsQuery } from '../../store/slices/postApiSlice';
 import { useGetActiveAdsQuery } from '../../store/slices/adApiSlice';
 import { useInView } from 'react-intersection-observer';
-import { useParams } from 'react-router-dom';
 
 interface Post {
   id: string;
@@ -56,12 +55,10 @@ const Home = () => {
   const [page, setPage] = useState(1);
   const limit = 10;
   const { ref, inView } = useInView();
-  const { channelId } = useParams();
 
   const [popupAds, setPopupAds] = useState<Ad[]>([]);
   const [visiblePopup, setVisiblePopup] = useState<string | null>(null);
   const hasShownInitialPopup = useRef(false);
-  const isInitialMount = useRef(true);
   const hasProcessedAds = useRef(false);
 
   const { 
@@ -127,7 +124,7 @@ const Home = () => {
         .map((post: Post) => post.category))];
         
       setCategories(prev => {
-        const mergedCategories = [...new Set([...prev, ...uniqueCategories])];
+        const mergedCategories = [...new Set([...prev, ...uniqueCategories])] as string[];
         return mergedCategories;
       });
     }

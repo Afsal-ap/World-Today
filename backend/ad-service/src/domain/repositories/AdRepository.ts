@@ -13,4 +13,5 @@ export interface IAdRepository {
   getById(id: string): Promise<Ad | null>;
   getByAdvertiserId(advertiserId: string): Promise<Ad[]>;
   updatePaymentStatus(id: string, status: PaymentStatus): Promise<Ad>;
+
 }

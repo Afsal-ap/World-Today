@@ -1,18 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../../store/slices/userApiSlice';
 import { NewspaperIcon } from '@heroicons/react/24/outline';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
-interface LoginResponse {
-    success: boolean;
-    tokens: {
-        accessToken: string;
-        refreshToken: string;
-    };     
-   
-}
+
 
 const Login = () => {
     const navigate = useNavigate();

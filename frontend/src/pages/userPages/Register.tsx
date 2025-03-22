@@ -10,7 +10,6 @@ const Register = () => {
   const navigate = useNavigate();
   const userToken = localStorage.getItem('userToken');
 
-  // Add this useEffect to check for existing token
   useEffect(() => {
     if (userToken) {
       navigate('/');
@@ -19,10 +18,8 @@ const Register = () => {
 
   // Helper function to format phone number
   const formatPhoneNumber = (value: string) => {
-    // Remove all non-digit characters except +
     let cleaned = value.replace(/[^\d+]/g, '');
     
-    // Ensure it starts with + and has only digits after
     if (!cleaned.startsWith('+')) {
         cleaned = '+' + cleaned.replace(/\D/g, '');
     }
@@ -65,7 +62,7 @@ const Register = () => {
       email: '',
       password: '',
       confirmPassword: '',
-      phone: '+91' // Initialize with country code
+      phone: '+91' 
     },
     validationSchema,
     onSubmit: async (values) => {

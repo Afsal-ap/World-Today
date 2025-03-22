@@ -7,5 +7,6 @@ export interface AdvertiserRepository {
     updateAdvertiser(advertiserId: string, advertiser: Partial<Advertiser>): Promise<void>;
     save(advertiser: Partial<Advertiser>): Promise<void>;
     count(): Promise<{totalAdvertisers:number;totalAds:number;adRevenue:number}>;
+    getAdCountsByDate(period: 'daily' | 'weekly'): Promise<{ date: string; count: number }[]>
 
 } 

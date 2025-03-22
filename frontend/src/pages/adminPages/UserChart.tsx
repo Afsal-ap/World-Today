@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   LineChart,
   Line,
@@ -66,7 +66,7 @@ const UserChart = () => {
                 checked ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
               }`}>
                 Weekly
-              </span>
+              </span> 
             )}
           </RadioGroup.Option>
         </RadioGroup>

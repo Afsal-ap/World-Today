@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useGetChannelProfileQuery, useUpdateChannelProfileMutation } from '../../store/slices/postApiSlice';
 import { toast } from 'react-hot-toast';
 import { useFormik } from 'formik';

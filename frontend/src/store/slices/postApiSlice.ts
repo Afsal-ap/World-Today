@@ -1,11 +1,23 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
+
+
+// Define the data type
+interface ChannelStats {
+  totalPosts: number;
+  totalLikes: number;
+  totalComments: number;
+  postCounts?: { date: string; count: number }[];
+}
+
+
 export const postApiSlice = createApi({
   reducerPath: 'postApi',
   baseQuery: fetchBaseQuery({ 
     baseUrl: 'http://localhost:3004',
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem('channelToken');
+      const token = localStorage.getItem('channelToken'); 
+      
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }
@@ -239,7 +251,7 @@ export const postApiSlice = createApi({
         url: `/api/posts/admin/channels/${channelId}/toggle-block`,
         method: 'PUT'
       }),
-      invalidatesTags: (result, error, channelId) => [
+      invalidatesTags: ( channelId) => [
         { type: 'Channel', id: channelId },
         'Channel'
       ]
@@ -267,7 +279,7 @@ export const postApiSlice = createApi({
         url: `/api/posts/${postId}/toggle-block`,
         method: 'PUT'
       }),
-      invalidatesTags: (result, error, postId) => [
+      invalidatesTags: ( postId) => [
         { type: 'Post', id: postId },
         'Post'
       ]
@@ -317,7 +329,19 @@ export const postApiSlice = createApi({
   getChannelStats: builder.query({
     query: () => '/api/dashboard/getChannelStats',
   }),
+  getPostChart: builder.query({
+    query: (period = 'daily') => `/api/dashboard/post-chart?period=${period}`,
+    transformResponse: (response: any) => {
+      console.log('Chart response:', response);
+      return response?.data || [];
+    },
+    providesTags: ['Post'],
+  }), 
 
+  getChannelDashboardStats: builder.query<ChannelStats, string>({
+    query: (channelId)=> `/api/channel/dashboard/getChannelDashboard/${channelId}`
+  })
+  
   }),
 });
 
@@ -351,5 +375,7 @@ export const {
   useJoinLiveStreamMutation,
   useGetLiveStreamDetailsQuery,
   useGetChannelsQuery,
-  useGetChannelStatsQuery
+  useGetChannelStatsQuery,
+  useGetPostChartQuery,
+  useGetChannelDashboardStatsQuery
 } = postApiSlice;

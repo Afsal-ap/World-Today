@@ -67,7 +67,7 @@ function App() {
             <Route index element={<Navigate to="/channel/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardOverview />} />
             <Route path="home" element={<DashboardOverview />} />
-            <Route path="articles" element={<ArticlesList />} />
+            <Route path="/channel/:channelId" element={<ArticlesList />} />
             <Route path="create" element={<CreatePost />} />
             <Route path="live" element={<Live />} />
             <Route path="account" element={<AccountSettings />} />

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import  { useEffect, useRef, useState } from 'react';
 import { useGetLiveStreamsQuery } from '../../store/slices/postApiSlice';
 import Peer from 'simple-peer';
 import io from 'socket.io-client';

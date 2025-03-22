@@ -5,11 +5,16 @@ import { ChannelRepositoryImpl } from "../../infrastructure/repositories/Channel
 import ChannelModel from "../../infrastructure/db/model/ChannelModel";
 import { Request, Response } from "express";
 import { PostModel } from "../../infrastructure/db/model/PostModel";
+import { GetChannelStatsController } from "../controllers/GetChannelStatsController";
+import { PostRepositoryImpl } from "../../infrastructure/repositories/PostRepositoryImpl";
+
 
 const router = Router();
-const channelRepository = new ChannelRepositoryImpl();
+const channelRepository = new ChannelRepositoryImpl(); 
+const postRepository = new PostRepositoryImpl()
 const channelDashboardController = new ChannelDashboardController(channelRepository);
-const authMiddleware = new AuthMiddleware();
+const authMiddleware = new AuthMiddleware(); 
+const getChannelStatsController = new GetChannelStatsController(channelRepository,postRepository)
 
 router.get("/", 
   authMiddleware.verifyToken.bind(authMiddleware), 
@@ -109,8 +114,25 @@ router.put('/profile',
         message: 'Failed to update profile'
       });
     }
-  }
-);
+  } )
+
+  router.get(
+    '/getChannelDashboard/:channelId',
+    authMiddleware.verifyToken.bind(authMiddleware),
+    async (req, res, next) => {
+      try {
+        const channelId = req.params.channelId as string;
+        const period = (req.query.period as 'daily' | 'weekly') || 'daily'; // Default to 'daily'
+        
+        // Pass both channelId and period to the controller
+        await getChannelStatsController.getChannelDashbordDetails(req, res, channelId, period);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+  
+
 
 
 

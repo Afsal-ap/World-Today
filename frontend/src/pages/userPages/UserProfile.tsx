@@ -48,7 +48,7 @@ const UserProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const updatedProfile = await updateProfile(formData).unwrap();
+          await updateProfile(formData).unwrap();
       setIsEditing(false);
     } catch (err) {
       console.error('Failed to update profile:', err);

@@ -1,25 +1,8 @@
-import { useState, useEffect } from 'react';
 import { useGetSavedPostsQuery } from '../store/slices/userApiSlice';
 
-interface Post {
-  _id: string;
-  title: string;
-  content: string;
-  media: string;
-  mediaType: string;
-  channelName: string;
-  likesCount: number;
-  commentsCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
-interface SavedPost {
-  postId: string;
-  postTitle: string;
-  savedAt: string;
-  // Add other post details if available
-}  
+
+ 
 
 const SavedPosts = () => {
   const { data: savedPostsResponse, isLoading, error } = useGetSavedPostsQuery();

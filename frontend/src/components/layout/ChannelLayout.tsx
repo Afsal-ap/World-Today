@@ -7,10 +7,7 @@ import {
 import { useGetChannelDashboardQuery, useGetChannelProfileQuery } from '../../store/slices/postApiSlice';
  
  
-interface channelData {
-  channelName: string;
-  logo: string;
-}
+
 
 
 const ChannelLayout = () => {
@@ -18,7 +15,7 @@ const ChannelLayout = () => {
   const { data: channelData } = useGetChannelDashboardQuery({});
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: profileData, isLoading } = useGetChannelProfileQuery({});
+  const { data: profileData } = useGetChannelProfileQuery({});
      
   const navigationItems = [
     { id: 'dashboard', path: '/channel/dashboard', icon: HomeIcon, label: 'Dashboard' },

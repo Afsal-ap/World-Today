@@ -27,7 +27,7 @@ const ChannelsList = () => {
   const { data: response, isLoading, error } = useGetAllChannelsQuery({ page, limit: 10 });
   const [toggleBlock] = useToggleChannelBlockMutation();
 
-  const handleToggleBlock = async (channelId: string, currentStatus: boolean) => {
+  const handleToggleBlock = async (channelId: string, ) => {
     setLoadingChannelId(channelId);
     try {
       const result = await toggleBlock(channelId).unwrap();
@@ -62,7 +62,7 @@ const ChannelsList = () => {
     return <div className="text-red-600 p-4">Error loading channels</div>;
   }
 
-  const { channels, totalPages, currentPage, totalChannels } = response || {};
+  const { channels, totalPages,  } = response || {};
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '-';
@@ -131,7 +131,7 @@ const ChannelsList = () => {
                   <Button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleToggleBlock(channel.id, channel.isBlocked);
+                      handleToggleBlock(channel.id);
                     }}
                     disabled={loadingChannelId === channel.id}
                     variant={channel.isBlocked ? "success" : "danger"}

@@ -9,9 +9,10 @@ import path from 'path';
 import { LikeModel } from '../../infrastructure/db/model/LikeModel';
 import { PostModel } from '../../infrastructure/db/model/PostModel';
 import { CommentModel } from '../../infrastructure/db/model/CommentModel';
-import { error } from 'console';
+import { error, log } from 'console';
 import { CategoryModel } from '../../infrastructure/db/model/CategoryModel';
 import { IPostDocument } from '../../infrastructure/db/model/PostModel';
+import mongoose from 'mongoose';
 
 const router = Router();
 const postRepository = new PostRepositoryImpl();
@@ -386,11 +387,14 @@ router.get('/channel/:channelId/posts', authMiddleware.verifyToken.bind(authMidd
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { channelId } = req.params;
-      
+       console.log(channelId, "chanel id bro");
+       
       const posts = await PostModel.find({ channelId })
         .sort({ createdAt: -1 })
         .populate('channel', 'channelName');
-      
+       
+        
+        
       const postsWithDetails = await Promise.all(
         posts.map(async (post) => {
           const likesCount = await LikeModel.countDocuments({ postId: post._id });
@@ -402,7 +406,8 @@ router.get('/channel/:channelId/posts', authMiddleware.verifyToken.bind(authMidd
             commentsCount
           };
         })
-      );
+        );
+        console.log(postsWithDetails,"posteee");
 
       res.json({
         status: 'success',

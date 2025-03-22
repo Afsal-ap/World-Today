@@ -2,7 +2,8 @@ import { PostRepository } from '../../domain/repositories/PostRepository';
 import { Post } from '../../domain/entities/Post';
 import { PostModel, IPostDocument } from '../db/model/PostModel';
 import mongoose, { Types } from 'mongoose';
-
+import { LikeModel } from '../db/model/LikeModel'; 
+import { CommentModel } from '../db/model/CommentModel';
 // ... existing imports ...
 
 export class PostRepositoryImpl implements PostRepository {
@@ -125,6 +126,86 @@ export class PostRepositoryImpl implements PostRepository {
         throw new Error(`Failed to fetch posts by IDs: ${error.message}`);
       }
       throw new Error('Failed to fetch posts by IDs: An unknown error occurred');
+    }
+  }
+
+  async getPostCountsByDate(period: 'daily' | 'weekly'): Promise<{ date: string; count: number }[]> {
+    try {
+      let dateFormat = "%Y-%m-%d"; 
+      if (period === "weekly") {
+        dateFormat = "%Y-%U";
+      }
+  
+      const postCounts = await PostModel.aggregate([
+        {
+          $group: {
+            _id: { $dateToString: { format: dateFormat, date: "$createdAt" } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]);
+  
+      return postCounts.map(item => ({
+        date: item._id,
+        count: item.count
+      }));
+    } catch (error) {
+      console.error("Error fetching post counts:", error);
+      throw new Error("Failed to fetch post counts by date");
+    }
+  }
+ 
+  async getChannelStats(channelId: string, period: 'daily' | 'weekly'): Promise<{
+    totalPosts: number;
+    totalLikes: number;
+    totalComments: number;
+    postCounts: { date: string; count: number }[];
+  }> {
+    if (!channelId || typeof channelId !== 'string') {
+      throw new Error('Invalid channelId provided');
+    }
+  
+    try {
+      // Get total counts
+      const totalPosts = await PostModel.countDocuments({ channelId }); 
+      const posts = await PostModel.find({ channelId }).select('_id');
+      const postIds = posts.map(post => post._id);
+      
+      const [totalLikes, totalComments] = await Promise.all([
+        LikeModel.countDocuments({ postId: { $in: postIds } }),
+        CommentModel.countDocuments({ postId: { $in: postIds } })
+      ]);
+  
+      // Set date format based on period
+      const dateFormat = period === "weekly" ? "%Y-%U" : "%Y-%m-%d";
+  
+      // Get post counts by date
+      const postCounts = await PostModel.aggregate([
+        {
+          $match: { channelId }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: dateFormat, date: "$createdAt" } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]);
+  
+      return {
+        totalPosts,
+        totalLikes,
+        totalComments,
+        postCounts: postCounts.map(item => ({
+          date: item._id,
+          count: item.count
+        }))
+      };
+    } catch (error) {
+      console.error("Error fetching channel stats:", error);
+      throw new Error("Failed to fetch channel stats");
     }
   }
 }

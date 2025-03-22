@@ -8,11 +8,14 @@ import {
   PlayIcon, FireIcon, TagIcon
 } from '@heroicons/react/24/outline';
 import UserChart from '../adminPages/UserChart';
+import ChannelChart from '../adminPages/ChannelChart';
+import AdChart from '../adminPages/AdChart';
+
 
 const AdminDashboard = () => {
-  const { data: userStats, error: userError, isLoading: userLoading } = useGetUserStatsQuery();
-  const { data: channelStats, error: channelError, isLoading: channelLoading } = useGetChannelStatsQuery({});
-  const { data: advertiserStats, error: advertiserError, isLoading: advertiserLoading } = useGetAdvertiserStatsQuery({});
+  const { data: userStats,  isLoading: userLoading } = useGetUserStatsQuery();
+  const { data: channelStats, isLoading: channelLoading } = useGetChannelStatsQuery({});
+  const { data: advertiserStats, isLoading: advertiserLoading } = useGetAdvertiserStatsQuery({});
     
   const totalRevenue = advertiserStats?.totalRevenue || 0;
 
@@ -115,8 +118,8 @@ const AdminDashboard = () => {
           ))}
         </div>
         
-        <div className="mt-6 h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-          <p className="text-gray-500">Content Categories Distribution</p>
+        <div className="mt-6">
+          <ChannelChart />
         </div>
       </div>
 
@@ -137,10 +140,11 @@ const AdminDashboard = () => {
             </div>
           ))}
         </div>
-        
-        <div className="mt-6 h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-          <p className="text-gray-500">Ad Revenue Trend</p>
+         
+        <div className="mt-6">
+          <AdChart />
         </div>
+        
       </div>
 
       {/* Recent Activity */}

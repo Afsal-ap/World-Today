@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGetAllUsersQuery, useUpdateUserStatusMutation, useUpdateUserBlockStatusMutation } from '../../store/slices/adminApiSlice';
+import { useGetAllUsersQuery, useUpdateUserBlockStatusMutation } from '../../store/slices/adminApiSlice';
 
 interface User {
   _id: string;
@@ -12,7 +12,6 @@ interface User {
 const UsersList = () => {
   const [page, setPage] = useState(1);
   const { data, isLoading, error } = useGetAllUsersQuery({ page, limit: 10 });
-  const [updateUserStatus, { isLoading: isUpdating }] = useUpdateUserStatusMutation();
   const [updateUserBlockStatus] = useUpdateUserBlockStatusMutation();
 
   if (isLoading) {
@@ -27,13 +26,7 @@ const UsersList = () => {
     return <div className="text-red-600 p-4">Error loading users</div>;
   }
 
-  const handleStatusChange = async (userId: string, isAdmin: boolean) => {
-    try {
-      await updateUserStatus({ userId, isAdmin }).unwrap();
-    } catch (err) {
-      console.error('Failed to update user status:', err);
-    }
-  };
+ 
 
   const handleBlockStatus = async (userId: string, isBlocked: boolean) => {
     try {

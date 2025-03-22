@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useGetChannelPostsQuery, useTogglePostBlockMutation } from '../../store/slices/postApiSlice';
 import { format, parseISO, isValid } from 'date-fns';
 
@@ -33,7 +32,6 @@ interface ChannelDetailsProps {
 const ChannelDetails = ({ channel, onClose }: ChannelDetailsProps) => {
   const { data: posts, isLoading, error, refetch } = useGetChannelPostsQuery(channel.id);
   const [togglePostBlock] = useTogglePostBlockMutation();
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   const handleToggleBlock = async (postId: string) => {
     try {
