@@ -1,15 +1,17 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { Ad, CreateAdDTO } from '../../types/ad';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export interface StripePaymentIntent {
   clientSecret: string;
   paymentIntentId: string;
 }
 
-export const adApiSlice = createApi({
+export const adApiSlice = createApi({ 
   reducerPath: 'adApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: 'http://localhost:3002',
+    baseUrl: API_BASE_URL,
     prepareHeaders: (headers, ) => {
       // Get token from localStorage
       const token = localStorage.getItem('advertiserToken');

@@ -13,5 +13,15 @@ export default defineConfig({
     rollupOptions: {
       external: [], // Don’t externalize simple-peer
     },
+    outDir: 'dist', // Ensure output directory is correct
+  },
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
+  base: '/', // Ensure this is set for correct route handling
+  server: {
+    port: 3000,
   },
 });

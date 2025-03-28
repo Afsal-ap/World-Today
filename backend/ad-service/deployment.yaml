@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ad-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ad-service
+  template:
+    metadata:
+      labels:
+        app: ad-service
+    spec:
+      containers:
+      - name: ad-service
+        image: 404456670711.dkr.ecr.us-east-1.amazonaws.com/ad-service:latest  
+        ports:
+        - containerPort: 3002 
+        env:
+        - name: MONGODB_URI
+          value: "mongodb+srv://afsalap:kvrsalus123@cluster0.xmzan.mongodb.net/ad-service?retryWrites=true&w=majority&appName=Cluster0"
+        - name: ACCESS_TOKEN_SECRET
+          value: "afsalap123"
+        - name: REFRESH_TOKEN_SECRET
+          value: "afsalap123"

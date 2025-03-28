@@ -36,6 +36,8 @@ import AdvertiserAccount from './pages/advertiser/AdvertiserAccount';
 import { ToastContainer } from 'react-toastify';
 import Weather from './components/layout/Weather';
 import SubscriptionPage from './pages/userPages/SubscriptionPage';
+import  NotFound  from './pages/userPages/404'
+
 
 function App() {
   return (    
@@ -49,7 +51,8 @@ function App() {
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/live" element={<LiveWatch />} />
             <Route path="/weather" element={<Weather />} />
-            <Route path="/subscribe" element={<SubscriptionPage />} />
+            <Route path="/subscribe" element={<SubscriptionPage />} /> 
+            <Route path="*" element={<NotFound />} />
           </Route>
     
           {/* Public Routes without Header */}

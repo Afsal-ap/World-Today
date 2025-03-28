@@ -43,14 +43,19 @@ app.use('/advertiser', AdvertiserAuthRoutes);
 app.use('/api/ads', AdRoutes);
 app.use('/api/dashboard',AdminDashboardRoutes)
 
+app.get('/', (req, res) => {
+    res.send('Ad Service is running');
+});
+
+
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error('Unhandled error:', err);
     res.status(500).json({ error: 'Internal server error' });
 });
 
-const PORT = process.env.PORT || 3002;
-app.listen(PORT, () => {
+const PORT = 3002;
+app.listen(PORT,'0.0.0.0', () => {
     console.log(`Ad service running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     

@@ -29,3 +29,5 @@ dist-ssr
 
 public/uploads/*
 !public/uploads/.gitkeep
+
+.vercel
