@@ -16,7 +16,7 @@ const upload = multer({ dest: 'uploads/' });
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: 'http://www.worldtoday.shop',
+    origin: 'https://frontend-zeta-rose-49.vercel.app',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
