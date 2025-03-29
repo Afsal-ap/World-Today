@@ -6,6 +6,7 @@ import { useAdvertiserLoginMutation } from '../../store/slices/adApiSlice';
 const AdvertiserLogin = () => {
   const [login, { isLoading }] = useAdvertiserLoginMutation();
   const navigate = useNavigate();
+  console.log(process.env.NEXT_PUBLIC_API_BASE_URL,"env");
 
   const validationSchema = Yup.object({
     email: Yup.string().email('Invalid email').required('Email is required'),
