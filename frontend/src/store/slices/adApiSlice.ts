@@ -1,8 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { Ad, CreateAdDTO } from '../../types/ad';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-console.log(process.env.NEXT_PUBLIC_API_BASE_URL,"env");
+const API_BASE_URL = 'http://a1edfea32b7534f67a5b772dffd80616-312657671.us-east-1.elb.amazonaws.com'
 
 export interface StripePaymentIntent {
   clientSecret: string;
