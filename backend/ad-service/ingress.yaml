@@ -10,7 +10,7 @@ spec:
   tls:
   - hosts:
     - worldtoday.shop
-    - www.worldtoday.shop  # Added www subdomain support
+    - www.worldtoday.shop  
     secretName: worldtoday-shop-tls 
   rules:
   - host: worldtoday.shop
