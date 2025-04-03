@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { Ad, CreateAdDTO } from '../../types/ad';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.worldtoday.shop' 
-
+console.log("hello")
 export interface StripePaymentIntent {
   clientSecret: string;
   paymentIntentId: string;
