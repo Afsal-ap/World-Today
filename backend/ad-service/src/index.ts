@@ -16,7 +16,7 @@ const upload = multer({ dest: 'uploads/' });
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: 'https://frontend-zeta-rose-49.vercel.app',
+    origin: 'https://www.worldtoday.shop',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -54,7 +54,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
-const PORT = 3002;
+const PORT = 3002;  
 app.listen(PORT,'0.0.0.0', () => {
     console.log(`Ad service running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
