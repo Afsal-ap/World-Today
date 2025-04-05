@@ -14,7 +14,7 @@ interface ChannelStats {
 export const postApiSlice = createApi({
   reducerPath: 'postApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: 'http://localhost:3004',
+    baseUrl: 'https://postapi.worldtoday.shop/',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('channelToken'); 
       
