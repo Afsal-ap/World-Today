@@ -1,0 +1,4 @@
+echo deployment.yaml >> .gitignore
+git add .
+git commit -m "Removed secret and ignored deployment.yaml"
+git push origin master

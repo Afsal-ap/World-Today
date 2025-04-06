@@ -25,7 +25,7 @@ interface BaseQueryArgs {
 }
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: 'https://userapi.worldtoday.shop',
+  baseUrl: 'https://userapi.worldtoday.shop',    
   credentials: 'include',
   prepareHeaders: (headers) => {
     const token = localStorage.getItem('userToken');
