@@ -47,7 +47,7 @@ import bodyParser from 'body-parser'
 
 
 const app = express();   
-
+     
 // Middleware
 app.use(cookieParser());
 app.use(cors({ 

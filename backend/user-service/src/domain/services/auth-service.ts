@@ -1,9 +1,9 @@
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { userInfo } from 'os';
+import { userInfo } from 'os';    
 
-dotenv.config();
+dotenv.config();    
 
 export interface IAuthService {
     hashPassword(password: string): Promise<string>;
