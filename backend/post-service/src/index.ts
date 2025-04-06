@@ -27,7 +27,7 @@ const app = express();
 const server = http.createServer(app); // Create an HTTP server
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'https://www.worldtoday.shop',
   credentials: true
 }));
 

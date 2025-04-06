@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt ,{ SignOptions } from "jsonwebtoken";
 import { ChannelRepository } from "../../domain/repositories/ChannelRepository";
 import { RegisterChannelDTO } from "../dto/ChannelAuthDto";
 import { v4 as uuidv4 } from 'uuid'; 
@@ -94,12 +94,22 @@ export class ChannelAuthUseCase {
   }
 
   private generateAccessToken(channelId: string): string {
-    return jwt.sign({ channelId }, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: process.env.TOKEN_EXPIRY });
+    const secret = process.env.ACCESS_TOKEN_SECRET as string;
+    const expiresIn = (process.env.TOKEN_EXPIRY || "1h") as jwt.SignOptions["expiresIn"];
+  
+    return jwt.sign({ channelId }, secret, { expiresIn });
   }
-
+  
+  
   private generateRefreshToken(channelId: string): string {
-    return jwt.sign({ channelId }, process.env.REFRESH_TOKEN_SECRET!, { expiresIn: process.env.REFRESH_TOKEN_EXPIRY });
+    const secret = process.env.REFRESH_TOKEN_SECRET as string;
+    const expiresIn = (process.env.REFRESH_TOKEN_EXPIRY || "7d") as jwt.SignOptions["expiresIn"];
+  
+    return jwt.sign({ channelId }, secret, { expiresIn });
   }
+  
+  
+  
 
   async resendOTP(email: string): Promise<void> {
     console.log('Attempting to resend OTP for:', email);

@@ -51,7 +51,7 @@ const app = express();
 // Middleware
 app.use(cookieParser());
 app.use(cors({ 
-  origin: 'http://localhost:5173', 
+  origin: 'https://www.worldtoday.shop', 
   credentials: true 
 })); 
 app.use(morgan('dev'));
@@ -176,7 +176,11 @@ app.use('/api/users', profileRoutes);
 app.use('/api/users', setupUserRoutes(userController, savedPostRepository, profileController));
 app.use('/api/dashboard',dashboarRoutes)
 // app.use('/api/subscription', subscriptionRoutes);
-
+ 
+ app.get('/',(req,res)=>{
+   res.send("user service running");
+   
+ })
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

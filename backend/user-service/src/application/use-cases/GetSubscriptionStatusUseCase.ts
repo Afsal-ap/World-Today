@@ -24,11 +24,11 @@ export class GetSubscriptionStatusUseCase {
         const isActive = await this.stripeService.isSubscriptionActive(user.subscriptionId);
         
         // Update user's subscription status in database if needed
-        if (isActive && user.subscriptionStatus !== 'active') {
+        if (isActive && user.subscriptionStatus as string !== 'active') {
           await this.userRepository.update(user.id!, {
             subscriptionStatus: 'active'
           });
-        } else if (!isActive && user.subscriptionStatus === 'active') {
+        } else if (!isActive && user.subscriptionStatus as string === 'active') {
           await this.userRepository.update(user.id!, {
             subscriptionStatus: 'inactive'
           });

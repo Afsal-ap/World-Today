@@ -6,7 +6,8 @@ export class StripeService implements IPaymentService {
 
   constructor() {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: '2023-10-16', // Use the latest API version or the one you're using
+      // @ts-ignore
+      apiVersion: "2023-10-16", 
     });
   }
 

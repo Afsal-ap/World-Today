@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: post-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: post-service
+  template:
+    metadata:
+      labels:
+        app: post-service
+    spec:
+      containers:
+      - name: post-service
+        image: 404456670711.dkr.ecr.us-east-1.amazonaws.com/post-service:latest  
+        ports:
+        - containerPort: 3004 
+        env:
+        - name: MONGO_URI
+          value: "mongodb+srv://afsalap:kvrsalus123@cluster0.xmzan.mongodb.net/post-service?retryWrites=true&w=majority&appName=Cluster0"
+        - name: ACCESS_TOKEN_SECRET
+          value: "afsal390"
+        - name: REFRESH_TOKEN_SECRET
+          value: "afsal123"

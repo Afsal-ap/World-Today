@@ -8,7 +8,7 @@ export class RabbitMQService {
 
   static async connect() {  
     if (!this.connection) {
-      const url = process.env.RABBITMQ_URL || "amqp://guest:guest@localhost:5672";
+      const url = process.env.RABBITMQ_URL || "amqp://guest:guest@rabbitmq-service:5672";
       this.connection = await amqp.connect(url);
       this.channel = await this.connection.createChannel();
       await this.channel.assertExchange(this.exchange, "direct", { durable: true });

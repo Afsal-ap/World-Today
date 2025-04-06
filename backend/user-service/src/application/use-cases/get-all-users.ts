@@ -8,7 +8,7 @@ export class GetAllUsersUseCase {
         const users = await this.userRepository.findAll(skip, limit);
         console.log(users,"usersdaaaaaaaa");
         const total = await this.userRepository.count();
-        const totalPages = Math.ceil(total / limit);
+        const totalPages = Math.ceil(total.totalUsers / limit);
 
         return {
             status: 'success',
@@ -16,8 +16,10 @@ export class GetAllUsersUseCase {
                 users,
                 currentPage: page,
                 totalPages,
-                total
+                totalUsers: total.totalUsers,
+                activeUsers: total.activeUsers
             }
         };
+        
     }
 } 

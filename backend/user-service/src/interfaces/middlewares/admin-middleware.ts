@@ -9,7 +9,7 @@ export const adminMiddleware = (userRepository: IUserRepository, authService: Au
             if (!authHeader) {
                 return res.status(401).json({ message: 'No token provided' });
             }
-
+          
             const token = authHeader.split(' ')[1];
             const decoded = await authService.verifyAccessToken(token);
             
@@ -18,10 +18,12 @@ export const adminMiddleware = (userRepository: IUserRepository, authService: Au
                 return res.status(403).json({ message: 'Access denied: Admin only' });
             }
 
-            if (!user.id) {
-                throw new Error('User ID is required');
-            }
-            req.user = user;
+            if (!user || !user.isAdmin || !user.id) {
+                return res.status(403).json({ message: 'Access denied: Admin only' });
+              }
+              
+              req.user = { id: user.id };
+              
 
             next();
         } catch (error) {   
