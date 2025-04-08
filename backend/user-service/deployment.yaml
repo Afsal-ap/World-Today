@@ -34,7 +34,10 @@ spec:
         - name: TWILIO_PHONE_NUMBER
           value: "+18153174341" 
         - name: STRIPE_SECRET_KEY
-          value: "sk_test_51Qx4epLJGKouWmFeEU2y6YZ7CNAch9UQVIFNU1X2rC0fg9UGI5EwsWnYWbk2A9vAYh71ayrWJePp4RAJromt4GCA00teY1jh1U"
+          valueFrom:
+            secretKeyRef:
+              name: stripe-secret
+              key: STRIPE_SECRET_KEY
         - name: RABBITMQ_URL
           value: "amqp://guest:guest@rabbitmq-service:5672" 
         - name: STRIPE_WEBHOOK_SECRET
