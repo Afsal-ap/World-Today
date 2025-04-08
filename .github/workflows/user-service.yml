@@ -1,0 +1,43 @@
+# .github/workflows/user-service.yml
+name: CI/CD - User Service
+
+on:
+  push:
+    paths:
+      - 'backend/user-service/**'
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to EKS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build & Push Docker Image
+        run: |
+          IMAGE_TAG=latest
+          IMAGE_URI=404456670711.dkr.ecr.us-east-1.amazonaws.com/user-service
+
+          docker build -t $IMAGE_URI ./backend/user-service
+          docker push $IMAGE_URI
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region us-east-1 --name my-eks-cluster
+
+      - name: Deploy to EKS
+        run: |
+          kubectl set image deployment/user-service user-service=404456670711.dkr.ecr.us-east-1.amazonaws.com/user-service:latest
