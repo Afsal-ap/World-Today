@@ -8,7 +8,6 @@ import ChannelAuthRoutes from "./interfaces/routes/ChannelAuthRoutes";
 import ChannelDashboardRoutes from "./interfaces/routes/ChannelDashboardRoutes";
 import { ChannelRepositoryImpl } from './infrastructure/repositories/ChannelRepositoryImpl';
 import commentRoutes from './interfaces/routes/CommentRoutes';
-// import { startGrpcServer } from './infrastructure/grpc/grpcServer';
 import adminRoutes from './interfaces/routes/adminRoutes';
 import { CategoryListener } from './infrastructure/services/categoryListener';
 import { RabbitMQService } from './infrastructure/services/rabbitMQService';
