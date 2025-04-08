@@ -7,7 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import AdRoutes from "./interfaces/routes/AdRoutes";
 import AdminDashboardRoutes from './interfaces/routes/AdminDashboardRoutes.ts'
-// Load environment variables first
+
 dotenv.config();
 
 const app = express();
@@ -32,7 +32,7 @@ const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 if (missingEnvVars.length > 0) {
     console.error('Missing required environment variables:', missingEnvVars);
     console.error('Please check your .env file');
-    // In development, we might want to continue anyway
+   
     if (process.env.NODE_ENV !== 'development') {
         process.exit(1);
     }
