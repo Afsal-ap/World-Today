@@ -46,7 +46,7 @@ router.post('/',
   }
 );
 
-router.get('/', authMiddleware.verifyToken.bind(authMiddleware), 
+router.get('/', 
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.query.userId as string;
