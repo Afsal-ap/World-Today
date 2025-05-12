@@ -162,7 +162,7 @@ router.delete('/:postId/like', authMiddleware.verifyToken.bind(authMiddleware), 
   }
 });
 
-router.get('/posts', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/posts', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.channelId;
     const posts = await PostModel.find();
