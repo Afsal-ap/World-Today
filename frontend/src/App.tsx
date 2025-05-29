@@ -37,7 +37,7 @@ import { ToastContainer } from 'react-toastify';
 import Weather from './components/layout/Weather';
 import SubscriptionPage from './pages/userPages/SubscriptionPage';
 import  NotFound  from './pages/userPages/404'
-import MainLayout from 'components/layout/MainLayout';
+import MainLayout from './components/layout/MainLayout';
 
 function App() {
   return (    
