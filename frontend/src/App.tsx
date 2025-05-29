@@ -44,7 +44,7 @@ function App() {
 
        {/* Banner at the top, outside Router & Layout */}
        <div className="bg-yellow-100 text-yellow-800 text-center py-2 font-medium shadow-sm">
-        🚧 This site is a work in progress. Some features may not work as expected.
+       ⚠️ Our backend services are temporarily unavailable due to AWS account suspension. We're working to resolve the issue. Thank you for your patience.
       </div>
       <Router>
         <Routes>
