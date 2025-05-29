@@ -100,16 +100,16 @@ const Home = () => {
     }
   };
 
-  useEffect(() => {
-    if (!userToken) {
-      console.log('No token found, redirecting to login');
-      navigate('/login');
-    } else {
-      const decodedToken = decodeToken(userToken);
-      const userId = decodedToken?.userId;
-      console.log('Decoded User ID:', userId);
-    }
-  }, [userToken, navigate]);
+  // useEffect(() => {
+  //   if (!userToken) {
+  //     console.log('No token found, redirecting to login');
+  //     navigate('/login');
+  //   } else {
+  //     const decodedToken = decodeToken(userToken);
+  //     const userId = decodedToken?.userId;
+  //     console.log('Decoded User ID:', userId);
+  //   }
+  // }, [userToken, navigate]);
 
   useEffect(() => {
     if (postsData.length > 0) {
