@@ -37,13 +37,16 @@ import { ToastContainer } from 'react-toastify';
 import Weather from './components/layout/Weather';
 import SubscriptionPage from './pages/userPages/SubscriptionPage';
 import  NotFound  from './pages/userPages/404'
-import MainLayout from './components/layout/MainLayout';
 
 function App() {
   return (    
-    <>
+    <> 
+
+       {/* Banner at the top, outside Router & Layout */}
+       <div className="bg-yellow-100 text-yellow-800 text-center py-2 font-medium shadow-sm">
+        🚧 This site is a work in progress. Some features may not work as expected.
+      </div>
       <Router>
-      <MainLayout> 
         <Routes>
           {/* Public Routes with Header */}
           <Route element={<UserLayout><Outlet /></UserLayout>}>
@@ -108,7 +111,7 @@ function App() {
             <Route path='/advertiser/account' element={<AdvertiserAccount />} />
 
         </Routes>
-        </MainLayout>
+        
       </Router>
       <ToastContainer />
     </>
