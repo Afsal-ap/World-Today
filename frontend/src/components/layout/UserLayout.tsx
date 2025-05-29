@@ -17,11 +17,12 @@ const UserLayout: FC<UserLayoutProps> = ({ children }) => {
 
   return (
     <div className="relative min-h-screen bg-gray-50">
-      {/* 🔔 Banner inside layout so it's visible on all user pages */}
-      <div className="bg-yellow-100 text-yellow-800 text-center py-2 font-medium shadow-sm z-50">
+      {/* ✅ Move banner ABOVE fixed header */}
+      <div className="bg-yellow-100 text-yellow-800 text-center py-2 font-medium shadow-sm z-50 relative">
         ⚠️ Our backend services are temporarily unavailable due to AWS account suspension. We're working to resolve the issue. Thank you for your patience.
       </div>
-
+  
+      {/* ✅ Fixed header */}
       <header className="bg-white shadow-md fixed top-0 left-0 w-full z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
@@ -32,7 +33,7 @@ const UserLayout: FC<UserLayoutProps> = ({ children }) => {
               <span className="text-3xl">🌍</span>
               <span>World Today</span>
             </Link>
-
+  
             {!isSubscribed && userToken && !isLoading && !isError && (
               <div className="bg-gray-200 text-center rounded-lg px-4 py-1">
                 <p>Enjoy an ad-free experience with Premium!</p>
@@ -41,7 +42,7 @@ const UserLayout: FC<UserLayoutProps> = ({ children }) => {
                 </Link>
               </div>
             )}
-
+  
             <div className="flex items-center space-x-6">
               {userToken ? (
                 <>
@@ -72,12 +73,14 @@ const UserLayout: FC<UserLayoutProps> = ({ children }) => {
           </div>
         </div>
       </header>
-
-      <main className="pt-32 pb-8 px-4">
-        <Outlet /> {/* This replaces {children} */}
+  
+      {/* Content starts after both banner + fixed header */}
+      <main className="pt-40 pb-8 px-4">
+        <Outlet />
       </main>
     </div>
   );
+  
 };
 
 export default UserLayout;
