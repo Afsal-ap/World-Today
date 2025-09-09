@@ -9,7 +9,7 @@ export const setupUserRoutes = (
   savedPostRepository: ISavedPostRepository,
   profileController: ProfileController
 ) => {
-  const router = Router();
+  const router = Router();  
 
   router.post('/posts/save', authMiddleware, (req, res) => 
     userController.toggleSavePost(req, res)

@@ -71,6 +71,7 @@ router.get('/',
             postId: post._id, 
             userId: userId
           });
+         
           
           return {
             ...post.toObject(),
@@ -117,27 +118,28 @@ router.get('/test-image/:filename', (req, res) => {
 
 router.post('/:postId/like', authMiddleware.verifyToken.bind(authMiddleware), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = (req as any).user.channelId;
+    const userId = (req as any).user.userId;
     const postId = req.params.postId; 
+    console.log(userId,"useriD");
     
     const { userId: bodyUserId } = req.body;
     
     // Check if user already liked the post
     const existingLike = await LikeModel.findOne({ 
-      userId: bodyUserId,
-      postId: postId 
+      userId,
+      postId
     });
 
     if (existingLike) {
       // If like exists, remove it (unlike)
-      await LikeModel.deleteOne({ userId: bodyUserId, postId: postId });
+      await LikeModel.deleteOne({ userId ,  postId });
       const likesCount = await LikeModel.countDocuments({ postId });
       res.status(200).json({ liked: false, likesCount });
     } else {
       // If no like exists, create new like
       await LikeModel.create({ 
-        userId: bodyUserId,
-        postId: postId 
+        userId,
+        postId 
       });
       const likesCount = await LikeModel.countDocuments({ postId });
       res.status(200).json({ liked: true, likesCount });
@@ -187,7 +189,7 @@ router.get('/posts', async (req: Request, res: Response, next: NextFunction) => 
   }
 });
 
-router.get('/:id', authMiddleware.verifyToken.bind(authMiddleware), 
+router.get('/:id', 
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const postId = req.params.id;

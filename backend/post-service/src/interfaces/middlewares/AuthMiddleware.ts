@@ -19,6 +19,8 @@ export class AuthMiddleware {
   verifyToken(req: Request, res: Response, next: NextFunction): void {
     try {
       const authHeader = req.headers.authorization;
+      console.log(authHeader,"header");
+      
       if (!authHeader) {
         res.status(401).json({
           success: false,

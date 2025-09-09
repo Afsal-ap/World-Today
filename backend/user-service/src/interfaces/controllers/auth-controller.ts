@@ -66,7 +66,8 @@ export class AuthController {
     async login(req: Request, res: Response): Promise<void> {
         try {
             const result = await this.loginUseCase.execute(req.body);
-            
+             console.log(req.body,"data");
+             
             if (result.user.isBlocked) {
                 res.status(403).json({ 
                     success: false, 

@@ -18,9 +18,9 @@ const UserLayout: FC<UserLayoutProps> = ({ children }) => {
   return (
     <div className="relative min-h-screen bg-gray-50">
       {/* ✅ Move banner ABOVE fixed header */}
-      <div className="bg-yellow-100 text-yellow-800 text-center py-2 font-medium shadow-sm z-50 relative">
+      {/* <div className="bg-yellow-100 text-yellow-800 text-center py-2 font-medium shadow-sm z-50 relative">
         ⚠️ Our backend services are temporarily unavailable due to AWS account suspension. We're working to resolve the issue. Thank you for your patience.
-      </div>
+      </div> */}
   
       {/* ✅ Fixed header */}
       <header className="bg-white shadow-md fixed top-0 left-0 w-full z-40">

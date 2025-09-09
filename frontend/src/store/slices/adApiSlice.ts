@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { Ad, CreateAdDTO } from '../../types/ad';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.worldtoday.shop' 
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.worldtoday.shop' 
 console.log("hello")
 export interface StripePaymentIntent {
   clientSecret: string;
@@ -11,7 +11,7 @@ export interface StripePaymentIntent {
 export const adApiSlice = createApi({ 
   reducerPath: 'adApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: API_BASE_URL,
+    baseUrl: 'http://localhost:3002',
     prepareHeaders: (headers, ) => {
       // Get token from localStorage
       const token = localStorage.getItem('advertiserToken');

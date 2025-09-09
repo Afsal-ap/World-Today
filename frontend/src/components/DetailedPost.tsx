@@ -1,25 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useGetPostQuery, useCreateCommentMutation, useGetPostCommentsQuery, useDeleteCommentMutation, useUpdateCommentMutation } from '../store/slices/postApiSlice';
 import { FiEdit, FiTrash } from 'react-icons/fi';
+import { useGetDetailPostQuery, useCreateCommentMutation, useGetCommentsQuery, useDeleteCommentMutation, useUpdateCommentMutation } from '../store/slices/userApiSlice';
+import { string } from 'yup';
+import type { Comment } from '../store/slices/userApiSlice';
 
 
 
-interface Comment {
-  _id: string;
-  content: string;
-  userId: string;
-  createdAt: string;
-  userName: string;
-}
 
 function DetailedPost() {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const [comment, setComment] = useState('');
-  const { data: post, isLoading, error } = useGetPostQuery(postId);
+  const { data: post, isLoading, error } = useGetDetailPostQuery(postId!);
   const [createComment] = useCreateCommentMutation();
-  const { data: comments } = useGetPostCommentsQuery(postId);
+  const { data: comments } = useGetCommentsQuery(postId!);
   const channelToken = localStorage.getItem('channelToken');
   const userToken = localStorage.getItem('userToken');
   const [liked, setLiked] = useState(false);
@@ -27,6 +22,9 @@ function DetailedPost() {
   const [editedComment, setEditedComment] = useState('');
   const [deleteComment] = useDeleteCommentMutation();
   const [updateComment] = useUpdateCommentMutation();
+  
+  console.log(comments, "commets");
+  
 
   useEffect(() => {
     if (error) {
@@ -48,32 +46,27 @@ function DetailedPost() {
   const handleSubmitComment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!comment.trim()) return;
-    
+  
     try {
-      const userToken = localStorage.getItem('userToken');
-      if (!userToken) {
-        throw new Error('No user token found');
-      }
-
+      if (!userToken) throw new Error('No user token found');
+  
       const decodedToken = decodeToken(userToken);
       const userId = decodedToken?.userId;
+      if (!userId) throw new Error('User ID not found in token');
+  
+      // CREATE COMMENT
+       await createComment({
+            postId: postId!,
+          data: { content: comment, userId }
+          }).unwrap();
 
-      if (!userId) {
-        throw new Error('User ID not found in token');
-      }
-
-      await createComment({ 
-        postId, 
-        content: comment,
-        userId: userId 
-      }).unwrap();
-      
-      setComment('');
+  
+      setComment(''); 
     } catch (err) {
       console.error('Failed to post comment:', err);
     }
   };
-
+  
   const handleLike = async () => {
     try {
       if (!post) return;
@@ -89,7 +82,7 @@ function DetailedPost() {
       const response = await fetch(`http://localhost:3004/api/posts/${postId}/like`, {
         method,
         headers: {
-          'Authorization': `Bearer ${channelToken}`,
+          'Authorization': `Bearer ${userToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ userId })
@@ -127,13 +120,16 @@ function DetailedPost() {
 
   const handleSaveEdit = async (commentId: string) => { 
     try {
-      await updateComment({
-        postId: postId!,
-        commentId,
-        content: editedComment
-      }).unwrap();
-      setEditingCommentId(null);
-      setEditedComment('');
+      // UPDATE COMMENT
+       await updateComment({
+       postId: postId!,
+       commentId,
+        data: { content: editedComment }
+     }).unwrap();
+
+       setEditingCommentId(null);
+       setEditedComment('');
+
     } catch (error) {
       console.error('Failed to update comment:', error);
     }

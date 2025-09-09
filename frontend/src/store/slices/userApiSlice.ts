@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { jwtDecode } from 'jwt-decode'; // Install with `npm install jwt-decode`
+import { jwtDecode } from 'jwt-decode';
 
 interface User {
   id?: string;
@@ -7,6 +7,17 @@ interface User {
   name?: string;
   isBlocked?: boolean;
 }
+
+
+export interface Comment {
+  _id: string;
+  id: string;
+  userId: string;
+  userName: string;
+  content: string;
+  createdAt: string;
+}
+
 
 interface ProfileResponseDto {
   id: string;
@@ -25,13 +36,15 @@ interface BaseQueryArgs {
 }
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: 'https://userapi.worldtoday.shop',    
+  baseUrl: 'http://localhost:3001',    
   credentials: 'include',
   prepareHeaders: (headers) => {
     const token = localStorage.getItem('userToken');
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
+      console.log("Attached token:", token);
     } else {
+      console.log("No token found in localStorage");
       headers.delete('Authorization');
     }
     return headers;
@@ -65,7 +78,7 @@ const baseQueryWithReauth = async (args: BaseQueryArgs, api: any, extraOptions: 
 };
 
 export const userApiSlice = createApi({
-  tagTypes: ['Profile', 'SavedPosts', 'Subscription'],
+  tagTypes: ['Profile', 'SavedPosts', 'Subscription', 'Comments', 'Post'],
   reducerPath: 'userApi',
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
@@ -214,7 +227,108 @@ export const userApiSlice = createApi({
         throw new Error('Failed to toggle save status');
       },
     }),
-    getSavedPosts: builder.query<string[], void>({
+
+   
+    getPosts: builder.query<any, { page: number; limit: number }>({
+      query: ({ page, limit }) => ({
+        url: `http://localhost:3004/api/posts?page=${page}&limit=${limit}`,
+        method: 'GET',
+      }),
+      transformResponse: (response: any) => {
+        // assume backend sends { data: Post[], total: number }
+        return response;
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }: { id: string }) => ({ type: 'Post' as const, id })),
+              { type: 'Post', id: 'LIST' },
+            ]
+          : [{ type: 'Post', id: 'LIST' }],
+    }),
+    
+    
+
+    getDetailPost: builder.query({
+      query: (id: string) => ({
+        url: `http://localhost:3004/api/posts/${id}`,
+        method: 'GET',
+        credentials: 'include',
+      }),
+      transformResponse: (response: any) => {
+        const post = response?.data || {};
+        if (post.createdAt) {
+          post.createdAt = new Date(post.createdAt).toISOString();
+        }
+        if (post.updatedAt) {
+          post.updatedAt = new Date(post.updatedAt).toISOString();
+        }
+        return post;
+      },
+      providesTags: (_result, _error, id) => [{ type: 'Post', id }],
+    }),
+    
+
+    // Get all comments for a post
+    getComments: builder.query<Comment[], string>({
+      query: (postId) => ({
+        url: `http://localhost:3004/api/posts/${postId}/comments`,
+        method: 'GET',
+      }),
+      transformResponse: (response: { status: string; data: Comment[] }) => {
+        return response.data; // clean array
+      },
+      providesTags: (result, _error, postId) =>
+        result
+          ? [
+              ...result.map((comment) => ({ type: 'Comments' as const, id: comment._id })),
+              { type: 'Comments', id: 'LIST' },
+              { type: 'Post', id: postId },
+            ]
+          : [{ type: 'Comments', id: 'LIST' }, { type: 'Post', id: postId }],
+    }),
+    
+
+// Create comment
+createComment: builder.mutation<Comment, { postId: string; data: any }>({
+  query: ({ postId, data }) => ({
+    url: `http://localhost:3004/api/posts/${postId}/comments`,
+    method: 'POST',
+    body: data,
+  }),
+  invalidatesTags: (_result, _error, { postId }) => [
+    { type: 'Comments', id: 'LIST' },
+    { type: 'Post', id: postId }
+  ],
+}),
+
+// Update comment
+updateComment: builder.mutation<Comment, { postId: string; commentId: string; data: any }>({
+  query: ({ postId, commentId, data }) => ({
+    url: `http://localhost:3004/api/posts/${postId}/comments/${commentId}`,
+    method: 'PUT',
+    body: data,
+  }),
+  invalidatesTags: (_result, _error, { postId, commentId }) => [
+    { type: 'Comments', id: commentId },
+    { type: 'Post', id: postId }
+  ],
+}),
+
+// Delete comment
+deleteComment: builder.mutation<{ success: boolean }, { postId: string; commentId: string }>({
+  query: ({ postId, commentId }) => ({
+    url: `http://localhost:3004/api/posts/${postId}/comments/${commentId}`,
+    method: 'DELETE',
+  }),
+  invalidatesTags: (_result, _error, { postId, commentId }) => [
+    { type: 'Comments', id: commentId },
+    { type: 'Comments', id: 'LIST' },
+    { type: 'Post', id: postId }
+  ],
+}),
+
+  getSavedPosts: builder.query<string[], void>({
       query: () => ({ url: '/api/users/posts/saved', method: 'GET' }),
       providesTags: ['SavedPosts'],
       transformResponse: (response: any) => {
@@ -224,7 +338,7 @@ export const userApiSlice = createApi({
         return [];
       },
     }),
-    // New endpoint for subscription status
+    
     getSubscriptionStatus: builder.query<{ isSubscribed: boolean }, void>({
       query: () => {
         const token = localStorage.getItem('userToken'); 
@@ -258,7 +372,44 @@ export const userApiSlice = createApi({
         body: { userId, paymentMethodId },
       }),
     }),
-   
+
+    likePost: builder.mutation<
+    { liked: boolean; likesCount: number },
+    string
+  >({
+    query: (postId) => ({
+      url: `http://localhost:3004/api/posts/${postId}/like`,
+      method: 'POST',
+    }),
+    async onQueryStarted(postId, { dispatch, queryFulfilled }) {
+      // Optimistically update cache
+      const patchResult = dispatch(
+        userApiSlice.util.updateQueryData(
+          "getPosts",
+          { page: 1, limit: 10 }, 
+          (draft: any) => {
+            const post = draft.find((p: any) => p._id === postId);
+            if (post) {
+              post.isLiked = !post.isLiked;
+              post.likesCount += post.isLiked ? 1 : -1;
+            }
+          }
+        )
+      );
+  
+      try {
+        await queryFulfilled; // wait for server response
+      } catch {
+        patchResult.undo(); // rollback if API fails
+      }
+    },
+    invalidatesTags: (result, error, postId) => [
+      { type: "Post", id: postId },
+      { type: "Post", id: "LIST" },
+    ],
+  }),
+  
+
   }),
 });
 
@@ -273,5 +424,11 @@ export const {
   useGetSavedPostsQuery,
   useGetSubscriptionStatusQuery, 
   useCreateSubscriptionMutation,
-  
+  useGetDetailPostQuery,
+  useCreateCommentMutation,
+  useGetCommentsQuery,
+  useUpdateCommentMutation,
+  useDeleteCommentMutation,
+  useLikePostMutation,
+  useGetPostsQuery
 } = userApiSlice;

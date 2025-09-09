@@ -28,7 +28,7 @@ export class ChannelAuthUseCase {
       email: data.email,
       phoneNumber: data.phoneNumber,
       governmentId: data.governmentId,
-      logo: data.logo,
+      logo: data.logo.path,
       websiteOrSocialLink: data.websiteOrSocialLink,
       isVerified: false,
     };

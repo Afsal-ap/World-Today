@@ -41,9 +41,7 @@ import  NotFound  from './pages/userPages/404'
 function App() {
   return (    
     <> 
-       <div className="bg-yellow-100 text-yellow-800 text-center py-2 font-medium shadow-sm">
-      ⚠️ Our backend services are temporarily unavailable due to AWS account suspension. We're working to resolve the issue. Thank you for your patience.
-      </div>
+      
       
       <Router>
         <Routes>

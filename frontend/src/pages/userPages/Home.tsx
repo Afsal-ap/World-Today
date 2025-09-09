@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaRegComment } from 'react-icons/fa';
-import { useGetSubscriptionStatusQuery } from '../../store/slices/userApiSlice';
-import { useGetPostsQuery } from '../../store/slices/postApiSlice';
+import {  useGetSubscriptionStatusQuery, useLikePostMutation, useGetPostsQuery } from '../../store/slices/userApiSlice';
 import { useGetActiveAdsQuery } from '../../store/slices/adApiSlice';
 import { useInView } from 'react-intersection-observer';
 
@@ -18,7 +17,7 @@ interface Post {
   createdAt: Date;
   channelName: string;
   isLiked?: boolean;
-  likesCount?: number;
+  likesCount: number;
   commentsCount: number;
   comments: Array<{
     id: string;
@@ -55,11 +54,12 @@ const Home = () => {
   const [page, setPage] = useState(1);
   const limit = 10;
   const { ref, inView } = useInView();
-
+  const [likePost] = useLikePostMutation()
   const [popupAds, setPopupAds] = useState<Ad[]>([]);
   const [visiblePopup, setVisiblePopup] = useState<string | null>(null);
   const hasShownInitialPopup = useRef(false);
   const hasProcessedAds = useRef(false);
+  const [posts, setPosts] = useState<Post[]>([]);
 
   const { 
     data: postsData = [], 
@@ -69,6 +69,9 @@ const Home = () => {
   } = useGetPostsQuery({ page, limit }, {
     skip: page === 0,
   });
+
+  console.log(postsData,"posts");
+  
 
   const { data: subscriptionData, isLoading: subLoading, error: subError } = useGetSubscriptionStatusQuery(undefined, {
     skip: !userToken,
@@ -119,22 +122,27 @@ const Home = () => {
       }
       
       // Extract categories
-      const uniqueCategories = [...new Set(postsData
-        .filter((item: Post) => 'category' in item)
-        .map((post: Post) => post.category))];
+      const uniqueCategories: string[] = Array.from(new Set(
+        postsData
+          .filter((item: Post) => 'category' in item)
+          .map((post: Post) => String(post.category))
+      ));
+      
         
       setCategories(prev => {
-        const mergedCategories = [...new Set([...prev, ...uniqueCategories])] as string[];
+        const mergedCategories = Array.from(
+          new Set<string>([...prev, ...uniqueCategories])
+        );
         return mergedCategories;
       });
     }
   }, [postsData, selectedCategory]);
 
-  useEffect(() => {
-    if (inView && !isFetching && !postsLoading) {
-      setPage(prev => prev + 1);
-    }
-  }, [inView, isFetching, postsLoading]);
+  // useEffect(() => {
+  //   if (inView && !isFetching && !postsLoading) {
+  //     setPage(prev => prev + 1);
+  //   }
+  // }, [inView, isFetching, postsLoading]);
 
   useEffect(() => {
     // Only process ads if we have both posts and ads data, we're not subscribed, and we haven't processed ads yet
@@ -198,7 +206,38 @@ const Home = () => {
 
   const handleLike = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Like post:", postId);
+  
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              isLiked: !post.isLiked,
+              likesCount: post.isLiked ? post.likesCount - 1 : post.likesCount + 1,
+            }
+          : post
+      )
+    );
+  
+    try {
+      await likePost(postId).unwrap();
+    } catch (err) {
+      console.error("Failed to like post", err);
+      // rollback if error
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                isLiked: !post.isLiked,
+                likesCount: post.isLiked
+                  ? post.likesCount - 1
+                  : post.likesCount + 1,
+              }
+            : post
+        )
+      );
+    }
   };
 
   const handleSave = async (postId: string, e: React.MouseEvent) => {
@@ -300,27 +339,28 @@ const Home = () => {
                           {new Date(item.createdAt).toLocaleDateString()}
                         </div>
                         <div className="mt-4 flex items-center space-x-4">
-                          <button
-                            onClick={(e) => handleLike(item.id, e)}
-                            className={`flex items-center space-x-1 ${
-                              item.isLiked ? 'text-red-500' : 'text-gray-500'
-                            } hover:text-red-500`}
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill={item.isLiked ? 'currentColor' : 'none'}
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                              />
-                            </svg>
-                            <span>{item.likesCount || 0}</span>
-                          </button>
+                        <button
+                        onClick={(e) => handleLike(item.id, e)}
+                        className={`flex items-center space-x-1 ${
+                         item.isLiked ? "text-red-500" : "text-gray-500"
+                            }`}
+                         >
+                       <svg
+                      className="w-5 h-5"
+                     fill={item.isLiked ? "currentColor" : "none"}
+                       stroke="currentColor"
+                     viewBox="0 0 24 24"
+                     >
+                       <path
+                   strokeLinecap="round"
+                      strokeLinejoin="round"
+                         strokeWidth="2"
+                     d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                     />
+                   </svg>
+                  <span>{item.likesCount || 0}</span>
+                       </button>
+
                           <div className="flex items-center space-x-1 text-gray-500">
                             <FaRegComment className="w-5 h-5" />
                             <span>{item.commentsCount}</span>
@@ -363,14 +403,14 @@ const Home = () => {
               ))}
             </div>
           )}
-          {isFetching && page > 1 && (
+          {/* {isFetching && page > 1 && (
             <div className="flex justify-center py-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
             </div>
           )}
           {isError && (
             <div className="text-red-600 text-center py-4">Failed to load more posts</div>
-          )}
+          )} */}
         </div>
       </main>
 

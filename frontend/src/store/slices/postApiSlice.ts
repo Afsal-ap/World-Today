@@ -14,7 +14,7 @@ interface ChannelStats {
 export const postApiSlice = createApi({
   reducerPath: 'postApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: 'https://postapi.worldtoday.shop',
+    baseUrl: 'http://localhost:3004',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('channelToken'); 
       
@@ -145,16 +145,7 @@ export const postApiSlice = createApi({
         body: { email }
       })
     }),
-    deleteComment: builder.mutation({
-      query: ({ postId, commentId }) => ({
-        url: `/api/posts/${postId}/comments/${commentId}`,
-        method: 'DELETE'
-      }),
-      invalidatesTags: (_result, _error, { postId }) => [
-        { type: 'Post', id: postId },
-        'Comments'
-      ]
-    }),
+    
     getPost: builder.query({
       query: (id) => `/api/posts/${id}`,
       transformResponse: (response: any) => {
@@ -169,14 +160,7 @@ export const postApiSlice = createApi({
       },
       providesTags: (_result, _error, id) => [{ type: 'Post', id }]
     }),
-    createComment: builder.mutation({
-      query: ({ postId, content, userId }) => ({
-        url: `/api/posts/${postId}/comments`,
-        method: 'POST',
-        body: { content, userId }
-      }),
-      invalidatesTags: ['Post']
-    }),
+    
     getPostComments: builder.query({
       query: (postId) => `/api/posts/${postId}/comments`,
       transformResponse: (response: any) => {
@@ -256,17 +240,7 @@ export const postApiSlice = createApi({
         'Channel'
       ]
     }),
-    updateComment: builder.mutation({
-      query: ({ postId, commentId, content }) => ({
-        url: `/api/posts/${postId}/comments/${commentId}`,
-        method: 'PUT',
-        body: { content }
-      }),
-      invalidatesTags: (_result, _error, { postId }) => [
-        { type: 'Post', id: postId },
-        'Comments'
-      ]
-    }),
+   
     getCategories: builder.query({
       query: () => '/api/posts/categories',
       transformResponse: (response: any) => {
@@ -357,16 +331,13 @@ export const {
   useChannelLoginMutation,
   useGetChannelDashboardQuery,
   useResendOtpMutation,
-  useDeleteCommentMutation,
   useGetPostQuery,
-  useCreateCommentMutation,
   useGetPostCommentsQuery,
   useGetChannelProfileQuery,
   useUpdateChannelProfileMutation,
   useGetChannelPostsQuery,
   useGetAllChannelsQuery,
   useToggleChannelBlockMutation,
-  useUpdateCommentMutation,
   useGetCategoriesQuery,
   useTogglePostBlockMutation,
   useGetLiveStreamsQuery,
