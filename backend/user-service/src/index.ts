@@ -50,10 +50,20 @@ const app = express();
      
 // Middleware
 app.use(cookieParser());
-app.use(cors({ 
-  origin: [ "https://worldtoday.shop", 'https://www.worldtoday.shop',"http://localhost:3000"], 
-  credentials: true 
-})); 
+app.use(
+  cors({
+    origin: [
+      "https://worldtoday.shop",
+      "https://www.worldtoday.shop",
+      "http://localhost:3000",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+
 app.use(morgan('dev'));
 app.use(helmet());
 app.use(express.json());  

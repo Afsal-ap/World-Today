@@ -35,7 +35,6 @@ interface BaseQueryArgs {
   credentials?: RequestCredentials;
 }
  const userapi ="https://userapi.worldtoday.shop"
- const postapi = "https://postapi.worldtoday.shop"
 
 const baseQuery = fetchBaseQuery({
   baseUrl: userapi,    

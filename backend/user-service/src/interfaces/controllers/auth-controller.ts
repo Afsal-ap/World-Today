@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response} from 'express';
 import { RegisterUserUseCase } from '../../application/use-cases/register-user';
 import { LoginUserUseCase } from '../../application/use-cases/login-user';
 import { AuthService } from '../../domain/services/auth-service';
@@ -63,39 +63,28 @@ export class AuthController {
         }
     }  
 
-    async login(req: Request, res: Response): Promise<void> {
+    async login(req: Request, res: Response) {
         try {
-            const result = await this.loginUseCase.execute(req.body);
-             console.log(req.body,"data");
-             
-            if (result.user.isBlocked) {
-                res.status(403).json({ 
-                    success: false, 
-                    error: 'Your account has been blocked. Please contact support.' 
-                });
-                return;
-            }
-            
-            // Set refresh token in cookie
-            res.cookie('refreshToken', result.tokens.refreshToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-            });
-
-            res.status(200).json({
-                success: true,
-                user: result.user,
-                tokens: {
-                    accessToken: result.tokens.accessToken,
-                    refreshToken: result.tokens.refreshToken
-                }
-            });
-        } catch (error: any) {
-            res.status(401).json({ error: error.message });
+          const result = await this.loginUseCase.execute(req.body);
+      
+          // ✅ Correct cookie setup for subdomains + HTTPS
+          res.cookie("refreshToken", result.tokens.refreshToken, {
+            httpOnly: true,
+            secure: true,        // required for HTTPS
+            sameSite: "none",    // allow cookies across subdomains
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+          });
+      
+          res.status(200).json({
+            message: "Login successful",
+            accessToken: result.tokens.accessToken,
+            user: result.user,
+          });
+        } catch (err) {
+          console.error(err)
         }
-    }
+      }
+      
 
     async refreshToken(req: Request, res: Response): Promise<void> {
         try {
