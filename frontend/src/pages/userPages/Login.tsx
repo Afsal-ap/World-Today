@@ -7,7 +7,7 @@ import * as Yup from 'yup';
 
 
 
-const Login = () => {
+const Login = () => {   
     const navigate = useNavigate();
     const [login, { isLoading}] = useLoginMutation();
 
@@ -35,21 +35,15 @@ const Login = () => {
         }),
         onSubmit: async (values) => {
             try {
-                const result = await login({ 
-                    email: values.email, 
-                    password: values.password 
-                }).unwrap();
-                
-                if (result.success) {
-                    localStorage.setItem('userToken', result.accessToken);
-                    
-                    setTimeout(() => navigate('/'), 100);
-                }
+              console.log("Sending login request", values);
+              const result = await login({ email: values.email, password: values.password }).unwrap();
+              console.log("Login success:", result);
             } catch (err: any) {
-                console.error('Login error:', err);
-                formik.setStatus(err.data?.error || err.data?.message || err.message || 'Login failed');
+              console.error("Login error caught in frontend:", err);
+              formik.setStatus(err.data?.error || err.data?.message || err.message || 'Login failed');
             }
-        },
+          },
+          
     });
 
     return (
