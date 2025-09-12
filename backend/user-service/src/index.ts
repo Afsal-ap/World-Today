@@ -51,7 +51,7 @@ const app = express();
 // Middleware
 app.use(cookieParser());
 app.use(cors({ 
-  origin: ['https://www.worldtoday.shop',"http://localhost:3000"], 
+  origin: [ "https://worldtoday.shop", 'https://www.worldtoday.shop',"http://localhost:3000"], 
   credentials: true 
 })); 
 app.use(morgan('dev'));

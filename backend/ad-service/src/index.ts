@@ -16,7 +16,7 @@ const upload = multer({ dest: 'uploads/' });
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: ['https://www.worldtoday.shop',"http://localhost:3000"], 
+    origin: ["https://worldtoday.shop", 'https://www.worldtoday.shop',"http://localhost:3000"], 
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
