@@ -11,7 +11,7 @@ export interface StripePaymentIntent {
 export const adApiSlice = createApi({ 
   reducerPath: 'adApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: 'http://localhost:3002',
+    baseUrl: 'https://ad-service-4m7w.onrender.com',
     prepareHeaders: (headers, ) => {
       // Get token from localStorage
       const token = localStorage.getItem('advertiserToken');

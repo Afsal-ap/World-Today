@@ -34,9 +34,11 @@ interface BaseQueryArgs {
   body?: any;
   credentials?: RequestCredentials;
 }
+ const userapi ="https://userapi.worldtoday.shop"
+ const postapi = "https://postapi.worldtoday.shop"
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: 'http://localhost:3001',    
+  baseUrl: userapi,    
   credentials: 'include',
   prepareHeaders: (headers) => {
     const token = localStorage.getItem('userToken');
@@ -231,7 +233,7 @@ export const userApiSlice = createApi({
    
     getPosts: builder.query<any, { page: number; limit: number }>({
       query: ({ page, limit }) => ({
-        url: `http://localhost:3004/api/posts?page=${page}&limit=${limit}`,
+        url: `https://postapi.worldtoday.shop/api/posts?page=${page}&limit=${limit}`,
         method: 'GET',
       }),
       transformResponse: (response: any) => {
@@ -251,7 +253,7 @@ export const userApiSlice = createApi({
 
     getDetailPost: builder.query({
       query: (id: string) => ({
-        url: `http://localhost:3004/api/posts/${id}`,
+        url: `https://postapi.worldtoday.shop/api/posts/${id}`,
         method: 'GET',
         credentials: 'include',
       }),
@@ -272,7 +274,7 @@ export const userApiSlice = createApi({
     // Get all comments for a post
     getComments: builder.query<Comment[], string>({
       query: (postId) => ({
-        url: `http://localhost:3004/api/posts/${postId}/comments`,
+        url: `https://postapi.worldtoday.shop/api/posts/${postId}/comments`,
         method: 'GET',
       }),
       transformResponse: (response: { status: string; data: Comment[] }) => {
@@ -292,7 +294,7 @@ export const userApiSlice = createApi({
 // Create comment
 createComment: builder.mutation<Comment, { postId: string; data: any }>({
   query: ({ postId, data }) => ({
-    url: `http://localhost:3004/api/posts/${postId}/comments`,
+    url: `https://postapi.worldtoday.shop/api/posts/${postId}/comments`,
     method: 'POST',
     body: data,
   }),
@@ -305,7 +307,7 @@ createComment: builder.mutation<Comment, { postId: string; data: any }>({
 // Update comment
 updateComment: builder.mutation<Comment, { postId: string; commentId: string; data: any }>({
   query: ({ postId, commentId, data }) => ({
-    url: `http://localhost:3004/api/posts/${postId}/comments/${commentId}`,
+    url: `https://postapi.worldtoday.shop/api/posts/${postId}/comments/${commentId}`,
     method: 'PUT',
     body: data,
   }),
@@ -318,7 +320,7 @@ updateComment: builder.mutation<Comment, { postId: string; commentId: string; da
 // Delete comment
 deleteComment: builder.mutation<{ success: boolean }, { postId: string; commentId: string }>({
   query: ({ postId, commentId }) => ({
-    url: `http://localhost:3004/api/posts/${postId}/comments/${commentId}`,
+    url: `https://postapi.worldtoday.shop/api/posts/${postId}/comments/${commentId}`,
     method: 'DELETE',
   }),
   invalidatesTags: (_result, _error, { postId, commentId }) => [
@@ -378,7 +380,7 @@ deleteComment: builder.mutation<{ success: boolean }, { postId: string; commentI
     string
   >({
     query: (postId) => ({
-      url: `http://localhost:3004/api/posts/${postId}/like`,
+      url: `https://postapi.worldtoday.shop/api/posts/${postId}/like`,
       method: 'POST',
     }),
     async onQueryStarted(postId, { dispatch, queryFulfilled }) {
