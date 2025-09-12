@@ -41,8 +41,8 @@ const Login = () => {
                 }).unwrap();
                 
                 if (result.success) {
-                    localStorage.setItem('userToken', result.tokens.accessToken);
-                    localStorage.setItem('refreshToken', result.tokens.refreshToken);
+                    localStorage.setItem('userToken', result.accessToken);
+                    
                     setTimeout(() => navigate('/'), 100);
                 }
             } catch (err: any) {

@@ -113,32 +113,34 @@ export const userApiSlice = createApi({
       },
     }),
     login: builder.mutation<
-      {
-        success: boolean;
-        user: User;
-        tokens: {
-          accessToken: string;
-          refreshToken: string;
-        };
-      },
-      any
-    >({
-      query: (credentials) => ({
-        url: '/auth/login',
-        method: 'POST',
-        body: credentials,
-        credentials: 'include',
-      }),
-      transformResponse: (response: any) => {
-        if (response.success && response.user && response.tokens) {
-          return response;
-        }
-        throw new Error(response.error || 'Login failed');
-      },
-      transformErrorResponse: (error: { status: number; data: any }) => {
-        return error.data;
-      },
-    }),
+  {
+    success: boolean;
+    user: User;
+    accessToken: string;
+  },
+  any
+>({
+  query: (credentials) => ({
+    url: '/auth/login',
+    method: 'POST',
+    body: credentials,
+    credentials: 'include',
+  }),
+  transformResponse: (response: any) => {
+    if (response.accessToken && response.user) {
+      return {
+        success: true,
+        user: response.user,
+        accessToken: response.accessToken,
+      };
+    }
+    throw new Error(response.error || 'Login failed');
+  },
+  transformErrorResponse: (error: { status: number; data: any }) => {
+    return error.data;
+  },
+}),
+
     sendOtp: builder.mutation<any, { phoneNumber: string }>({
       query: (data) => ({
         url: '/auth/send-otp',
