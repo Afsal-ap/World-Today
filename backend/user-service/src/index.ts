@@ -51,7 +51,7 @@ const app = express();
 // Middleware
 app.use(cookieParser());
 app.use(cors({
-  origin: ["https://worldtoday.shop", "https://www.worldtoday.shop"],
+  origin: "https://worldtoday.shop",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
